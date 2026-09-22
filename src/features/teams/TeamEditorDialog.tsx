@@ -26,10 +26,12 @@ const statLabels: Record<PokemonStatId, string> = {
   spe: "Speed"
 };
 
+export type TeamEditorDestination = TeamListKind | "popular";
+
 export type TeamEditorSubmission = {
   name: string;
   source: string;
-  destination: TeamListKind;
+  destination: TeamEditorDestination;
   team: PokemonTeam;
 };
 
@@ -37,7 +39,8 @@ type TeamEditorDialogProps = {
   open: boolean;
   initialTeam: SavedTeam | null;
   sources: string[];
-  defaultDestination: TeamListKind;
+  defaultDestination: TeamEditorDestination;
+  canManagePopular: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (submission: TeamEditorSubmission) => Promise<void>;
 };
@@ -47,13 +50,14 @@ export function TeamEditorDialog({
   initialTeam,
   sources,
   defaultDestination,
+  canManagePopular,
   onOpenChange,
   onSave
 }: TeamEditorDialogProps) {
   const [name, setName] = useState("");
   const [sourceChoice, setSourceChoice] = useState(newSourceValue);
   const [newSource, setNewSource] = useState("");
-  const [destination, setDestination] = useState<TeamListKind>(defaultDestination);
+  const [destination, setDestination] = useState<TeamEditorDestination>(defaultDestination);
   const [team, setTeam] = useState<PokemonTeam>({ format: "champions", members: [] });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -168,9 +172,10 @@ export function TeamEditorDialog({
                   </EditorField>
                 ) : !initialTeam ? (
                   <EditorField label="Collection">
-                    <select className={inputClassName} value={destination} onChange={(event) => setDestination(event.target.value as TeamListKind)}>
+                    <select className={inputClassName} value={destination} onChange={(event) => setDestination(event.target.value as TeamEditorDestination)}>
                       <option value="own">My teams</option>
                       <option value="opponent">Opponent teams</option>
+                      {canManagePopular ? <option value="popular">Popular teams</option> : null}
                     </select>
                   </EditorField>
                 ) : <div />}
@@ -178,9 +183,10 @@ export function TeamEditorDialog({
 
               {!initialTeam && sourceChoice === newSourceValue ? (
                 <EditorField label="Collection" className="md:max-w-sm">
-                  <select className={inputClassName} value={destination} onChange={(event) => setDestination(event.target.value as TeamListKind)}>
+                  <select className={inputClassName} value={destination} onChange={(event) => setDestination(event.target.value as TeamEditorDestination)}>
                     <option value="own">My teams</option>
                     <option value="opponent">Opponent teams</option>
+                    {canManagePopular ? <option value="popular">Popular teams</option> : null}
                   </select>
                 </EditorField>
               ) : null}

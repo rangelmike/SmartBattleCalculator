@@ -1,5 +1,20 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
+export type PopularTeamRow = {
+  id: string;
+  created_by: string;
+  name: string;
+  source: string;
+  format: string;
+  paste_url: string | null;
+  paste_text: string;
+  team_json: Json;
+  team_hash: string;
+  species_names: string[];
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -64,6 +79,35 @@ export type Database = {
         };
         Relationships: [];
       };
+      popular_teams: {
+        Row: PopularTeamRow;
+        Insert: {
+          id?: string;
+          created_by: string;
+          name: string;
+          source: string;
+          format?: string;
+          paste_url?: string | null;
+          paste_text: string;
+          team_json: Json;
+          team_hash: string;
+          species_names: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          source?: string;
+          format?: string;
+          paste_url?: string | null;
+          paste_text?: string;
+          team_json?: Json;
+          team_hash?: string;
+          species_names?: string[];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       team_collections: {
         Row: {
           user_id: string;
@@ -108,7 +152,17 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      is_popular_team_admin: { Args: Record<string, never>; Returns: boolean };
+      search_popular_teams: {
+        Args: { p_text?: string; p_pokemon?: string[]; p_limit?: number; p_offset?: number };
+        Returns: PopularTeamRow[];
+      };
+      suggest_popular_teams: {
+        Args: { p_kind: "source" | "pokemon"; p_prefix: string; p_excluded?: string[] };
+        Returns: { name: string; team_count: number }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

@@ -15,6 +15,7 @@ import type { TeamMember } from "@/lib/pokemon/types";
 type TeamViewerProps = {
   team: SavedTeam | null;
   isDeleting?: boolean;
+  isPopular?: boolean;
   onEdit?: (team: SavedTeam) => void;
   onDelete?: (team: SavedTeam) => Promise<void>;
 };
@@ -28,7 +29,7 @@ const statLabels: Record<(typeof pokemonStatIds)[number], string> = {
   spe: "Speed"
 };
 
-export function TeamViewer({ team, isDeleting = false, onEdit, onDelete }: TeamViewerProps) {
+export function TeamViewer({ team, isDeleting = false, isPopular = false, onEdit, onDelete }: TeamViewerProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => setConfirmDelete(false), [team?.id]);
@@ -71,7 +72,7 @@ export function TeamViewer({ team, isDeleting = false, onEdit, onDelete }: TeamV
 
       {confirmDelete && onDelete ? (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3">
-          <p className="text-sm font-medium text-destructive">Delete {team.name} from all collections?</p>
+          <p className="text-sm font-medium text-destructive">{isPopular ? `Delete ${team.name} from Popular teams?` : `Delete ${team.name} from all collections?`}</p>
           <div className="flex gap-2">
             <button className="h-9 rounded-md border border-border px-3 text-sm font-semibold hover:bg-background" type="button" onClick={() => setConfirmDelete(false)}>Cancel</button>
             <button className="h-9 rounded-md bg-destructive px-3 text-sm font-semibold text-destructive-foreground disabled:opacity-60" type="button" disabled={isDeleting} onClick={() => void onDelete(team).then(() => setConfirmDelete(false)).catch(() => undefined)}>{isDeleting ? "Deleting..." : "Delete"}</button>

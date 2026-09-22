@@ -39,6 +39,20 @@ function SourceFilter() {
   );
 }
 
+function RemoteSourceFilter() {
+  const [value, setValue] = useState("");
+  return (
+    <FilterAutocomplete
+      label="Popular source"
+      value={value}
+      onChange={setValue}
+      placeholder="Source"
+      loadSuggestions={(query) => Promise.resolve(query.startsWith("Reg") ? [{ name: "Regional", teamCount: 100 }] : [])}
+      complete={(_query, _caret, name) => ({ value: name, caret: name.length })}
+    />
+  );
+}
+
 describe("filter autocomplete", () => {
   it("completes each Pokemon in a multi-Pokemon query with Enter", () => {
     render(<PokemonFilter />);
@@ -59,6 +73,15 @@ describe("filter autocomplete", () => {
     const input = screen.getByRole<HTMLInputElement>("combobox", { name: "Name or source" });
     fireEvent.change(input, { target: { value: "Reg" } });
     expect(screen.getByRole("option", { name: /Regional.*2 teams/ })).toBeVisible();
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(input.value).toBe("Regional");
+  });
+
+  it("completes an asynchronously loaded popular source", async () => {
+    render(<RemoteSourceFilter />);
+    const input = screen.getByRole<HTMLInputElement>("combobox", { name: "Popular source" });
+    fireEvent.change(input, { target: { value: "Reg" } });
+    expect(await screen.findByRole("option", { name: /Regional.*100 teams/ })).toBeVisible();
     fireEvent.keyDown(input, { key: "Enter" });
     expect(input.value).toBe("Regional");
   });

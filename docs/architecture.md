@@ -41,6 +41,7 @@ docs/                     Architecture and operating notes
 
 - `profiles`: one row per auth user.
 - `teams`: saved teams, raw paste text, normalized JSON and stable hash.
+- `popular_teams`: shared, Champions-validated teams with a searchable species list. Authenticated readers use bounded server-side search and suggestion RPCs; only the verified designated administrator can write under RLS.
 - `ai_recommendation_cache`: cached Gemini/heuristic responses by team hash pair.
 - `usage_events`: optional lightweight telemetry for imports and AI calls.
 
@@ -74,6 +75,7 @@ GitHub Pages serves static files only. Supabase handles authentication, data, an
 - Service role key stays in Supabase Edge Functions or trusted scripts.
 - RLS owns access control for user data.
 - Public teams can be read by everyone; private teams only by owner.
+- Popular teams are separate from personal collections: every authenticated user can read them, while inserts, edits, and deletes require the designated account's verified email and matching user ID.
 - AI endpoints require authenticated users.
 
 ## Cost controls

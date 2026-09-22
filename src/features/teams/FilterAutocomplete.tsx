@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Search } from "lucide-react";
 import type { TeamSearchSuggestion } from "@/lib/pokemon/team-search";
 
@@ -9,7 +9,8 @@ type FilterAutocompleteProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
-  getSuggestions: (value: string, caret: number) => TeamSearchSuggestion[];
+  getSuggestions?: (value: string, caret: number) => TeamSearchSuggestion[];
+  loadSuggestions?: (value: string, caret: number) => Promise<TeamSearchSuggestion[]>;
   complete: (value: string, caret: number, suggestion: string) => Completion;
 };
 
@@ -19,6 +20,7 @@ export function FilterAutocomplete({
   onChange,
   placeholder,
   getSuggestions,
+  loadSuggestions,
   complete
 }: FilterAutocompleteProps) {
   const inputId = useId();
@@ -27,8 +29,33 @@ export function FilterAutocomplete({
   const [caret, setCaret] = useState(value.length);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const suggestions = getSuggestions(value, caret);
+  const [loaded, setLoaded] = useState<{ key: string; suggestions: TeamSearchSuggestion[] }>({ key: "", suggestions: [] });
+  const queryKey = `${value}\0${caret}`;
+  const suggestions = loadSuggestions
+    ? loaded.key === queryKey ? loaded.suggestions : []
+    : getSuggestions?.(value, caret) ?? [];
   const showSuggestions = isOpen && suggestions.length > 0;
+
+  useEffect(() => {
+    if (!loadSuggestions) return;
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void loadSuggestions(value, caret)
+        .then((items) => {
+          if (active) {
+            setLoaded({ key: queryKey, suggestions: items });
+            setActiveIndex(0);
+          }
+        })
+        .catch(() => {
+          if (active) setLoaded({ key: queryKey, suggestions: [] });
+        });
+    }, 180);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [value, caret, loadSuggestions, queryKey]);
 
   function selectSuggestion(name: string) {
     const result = complete(value, caret, name);

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState, type ReactNode } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -11,7 +11,7 @@ import {
   X,
   type LucideIcon
 } from "lucide-react";
-import { TeamEditorDialog, type TeamEditorSubmission } from "@/features/teams/TeamEditorDialog";
+import { TeamEditorDialog, type TeamEditorDestination, type TeamEditorSubmission } from "@/features/teams/TeamEditorDialog";
 import { FilterAutocomplete } from "@/features/teams/FilterAutocomplete";
 import { TeamViewer } from "@/features/teams/TeamViewer";
 import {
@@ -21,8 +21,7 @@ import {
   updateSavedTeamFromEditor,
   type SavedTeam,
   type TeamImportMethod,
-  type TeamLibrary,
-  type TeamListKind
+  type TeamLibrary
 } from "@/lib/pokemon/team-import";
 import {
   completePokemonTerm,
@@ -32,6 +31,15 @@ import {
   getTeamSources
 } from "@/lib/pokemon/team-search";
 import { updateProfileUsername, type AppProfile } from "@/lib/supabase/auth";
+import {
+  canManagePopularTeams,
+  createPopularTeam,
+  deletePopularTeam,
+  searchPopularTeams,
+  suggestPopularPokemon,
+  suggestPopularSources,
+  updatePopularTeam
+} from "@/lib/supabase/popular-teams";
 import {
   deleteTeamFromLibrary,
   loadTeamLibrary,
@@ -50,11 +58,11 @@ const newSourceValue = "__new_source__";
 export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
   const [username, setUsername] = useState(profile.username);
   const [library, setLibrary] = useState<TeamLibrary>(emptyLibrary);
-  const [activeList, setActiveList] = useState<TeamListKind>("own");
+  const [activeList, setActiveList] = useState<TeamEditorDestination>("own");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [pokemonFilter, setPokemonFilter] = useState("");
-  const [destination, setDestination] = useState<TeamListKind>("own");
+  const [destination, setDestination] = useState<TeamEditorDestination>("own");
   const [method, setMethod] = useState<TeamImportMethod>("text");
   const [teamName, setTeamName] = useState("");
   const [sourceChoice, setSourceChoice] = useState(newSourceValue);
@@ -69,8 +77,29 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editorTeam, setEditorTeam] = useState<SavedTeam | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [canManagePopular, setCanManagePopular] = useState(false);
+  const [popularTeams, setPopularTeams] = useState<SavedTeam[]>([]);
+  const [popularHasMore, setPopularHasMore] = useState(false);
+  const [isLoadingPopular, setIsLoadingPopular] = useState(false);
+  const [popularLoadError, setPopularLoadError] = useState<string | null>(null);
+  const [popularRefresh, setPopularRefresh] = useState(0);
+  const [editorCollection, setEditorCollection] = useState<TeamEditorDestination>("own");
+  const popularRequest = useRef(0);
 
   useEffect(() => setUsername(profile.username), [profile.username]);
+
+  useEffect(() => {
+    let active = true;
+    setCanManagePopular(false);
+    void canManagePopularTeams()
+      .then((allowed) => { if (active) setCanManagePopular(allowed); })
+      .catch(() => { if (active) setCanManagePopular(false); });
+    return () => { active = false; };
+  }, [profile.id]);
+
+  useEffect(() => {
+    if (!canManagePopular && destination === "popular") setDestination("own");
+  }, [canManagePopular, destination]);
 
   useEffect(() => {
     let isMounted = true;
@@ -94,18 +123,65 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
     };
   }, [profile.id]);
 
-  const sources = useMemo(() => getTeamSources(library), [library]);
+  useEffect(() => {
+    if (activeList !== "popular") return;
+    const requestId = ++popularRequest.current;
+    setPopularTeams([]);
+    setPopularHasMore(false);
+    setPopularLoadError(null);
+    setIsLoadingPopular(true);
+    const timer = window.setTimeout(() => {
+      void searchPopularTeams({ text: searchText, pokemon: pokemonFilter })
+        .then((result) => {
+          if (popularRequest.current !== requestId) return;
+          setPopularTeams(result.teams);
+          setPopularHasMore(result.hasMore);
+        })
+        .catch((loadError) => {
+          if (popularRequest.current === requestId) {
+            setPopularLoadError(loadError instanceof Error ? loadError.message : "Could not load popular teams.");
+          }
+        })
+        .finally(() => {
+          if (popularRequest.current === requestId) setIsLoadingPopular(false);
+        });
+    }, searchText || pokemonFilter ? 250 : 0);
+    return () => {
+      window.clearTimeout(timer);
+      popularRequest.current += 1;
+    };
+  }, [activeList, searchText, pokemonFilter, popularRefresh]);
+
+  const sources = useMemo(() => getTeamSources({ own: [...library.own, ...popularTeams], opponent: library.opponent }), [library, popularTeams]);
   const totalTeams = useMemo(() => {
     return new Set([...library.own, ...library.opponent].map((team) => team.teamHash)).size;
   }, [library]);
   const visibleTeams = useMemo(
-    () => filterTeams(library[activeList], { text: searchText, pokemon: pokemonFilter }),
-    [activeList, library, pokemonFilter, searchText]
+    () => activeList === "popular" ? popularTeams : filterTeams(library[activeList], { text: searchText, pokemon: pokemonFilter }),
+    [activeList, library, pokemonFilter, popularTeams, searchText]
   );
   const selectedTeam = useMemo(
     () => visibleTeams.find((team) => team.id === selectedTeamId) ?? visibleTeams[0] ?? null,
     [selectedTeamId, visibleTeams]
   );
+
+  async function loadMorePopularTeams() {
+    if (activeList !== "popular" || !popularHasMore || isLoadingPopular) return;
+    const requestId = popularRequest.current;
+    setIsLoadingPopular(true);
+    try {
+      const result = await searchPopularTeams({ text: searchText, pokemon: pokemonFilter }, popularTeams.length);
+      if (popularRequest.current !== requestId) return;
+      setPopularTeams((current) => [...current, ...result.teams]);
+      setPopularHasMore(result.hasMore);
+    } catch (loadError) {
+      if (popularRequest.current === requestId) {
+        setPopularLoadError(loadError instanceof Error ? loadError.message : "Could not load more popular teams.");
+      }
+    } finally {
+      if (popularRequest.current === requestId) setIsLoadingPopular(false);
+    }
+  }
 
   async function handleUsernameSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -139,11 +215,16 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
         source,
         pasteText: resolvedPasteText,
         pasteUrl: method === "pokepaste" ? pasteUrl : undefined,
-        destination
+        destination: destination === "popular" ? "own" : destination
       });
-      const nextLibrary = await saveTeamToLibrary(profile.id, team, destination);
-
-      setLibrary(nextLibrary);
+      if (destination === "popular") {
+        if (!canManagePopular) throw new Error("Only the popular-team administrator can import here.");
+        await createPopularTeam(team);
+        setPopularRefresh((current) => current + 1);
+      } else {
+        const nextLibrary = await saveTeamToLibrary(profile.id, team, destination);
+        setLibrary(nextLibrary);
+      }
       setActiveList(destination);
       setSelectedTeamId(team.id);
       setTeamName("");
@@ -151,7 +232,9 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
       setNewSource("");
       setPasteUrl("");
       setPasteText("");
-      setStatus(destination === "own" ? "Team added to My teams and Opponent teams." : "Opponent team added.");
+      setStatus(destination === "popular"
+        ? "Popular team imported."
+        : destination === "own" ? "Team added to My teams and Opponent teams." : "Opponent team added.");
     } catch (importError) {
       setError(importError instanceof Error ? importError.message : "Could not import team.");
     } finally {
@@ -161,11 +244,13 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
 
   function openNewTeamEditor() {
     setEditorTeam(null);
+    setEditorCollection(destination);
     setIsEditorOpen(true);
   }
 
   function openTeamEditor(team: SavedTeam) {
     setEditorTeam(team);
+    setEditorCollection(activeList);
     setIsEditorOpen(true);
   }
 
@@ -175,10 +260,16 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
 
     if (editorTeam) {
       const updatedTeam = await updateSavedTeamFromEditor(editorTeam, submission);
-      const nextLibrary = await updateTeamInLibrary(profile.id, updatedTeam);
-      setLibrary(nextLibrary);
+      if (editorCollection === "popular") {
+        if (!canManagePopular) throw new Error("Only the popular-team administrator can edit this team.");
+        await updatePopularTeam(updatedTeam);
+        setPopularRefresh((current) => current + 1);
+      } else {
+        const nextLibrary = await updateTeamInLibrary(profile.id, updatedTeam);
+        setLibrary(nextLibrary);
+      }
       setSelectedTeamId(updatedTeam.id);
-      setStatus("Team updated and validated for Champions.");
+      setStatus(editorCollection === "popular" ? "Popular team updated." : "Team updated and validated for Champions.");
       return;
     }
 
@@ -186,14 +277,22 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
       ownerId: profile.id,
       name: submission.name,
       source: submission.source,
-      destination: submission.destination,
+      destination: submission.destination === "popular" ? "own" : submission.destination,
       team: submission.team
     });
-    const nextLibrary = await saveTeamToLibrary(profile.id, createdTeam, submission.destination);
-    setLibrary(nextLibrary);
+    if (submission.destination === "popular") {
+      if (!canManagePopular) throw new Error("Only the popular-team administrator can create teams here.");
+      await createPopularTeam(createdTeam);
+      setPopularRefresh((current) => current + 1);
+    } else {
+      const nextLibrary = await saveTeamToLibrary(profile.id, createdTeam, submission.destination);
+      setLibrary(nextLibrary);
+    }
     setActiveList(submission.destination);
     setSelectedTeamId(createdTeam.id);
-    setStatus(submission.destination === "own" ? "Team created in My teams and Opponent teams." : "Opponent team created.");
+    setStatus(submission.destination === "popular"
+      ? "Popular team created."
+      : submission.destination === "own" ? "Team created in My teams and Opponent teams." : "Opponent team created.");
   }
 
   async function handleDeleteTeam(team: SavedTeam) {
@@ -201,8 +300,14 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
     setStatus(null);
     setIsDeleting(true);
     try {
-      const nextLibrary = await deleteTeamFromLibrary(profile.id, team.id);
-      setLibrary(nextLibrary);
+      if (activeList === "popular") {
+        if (!canManagePopular) throw new Error("Only the popular-team administrator can delete this team.");
+        await deletePopularTeam(team.id);
+        setPopularRefresh((current) => current + 1);
+      } else {
+        const nextLibrary = await deleteTeamFromLibrary(profile.id, team.id);
+        setLibrary(nextLibrary);
+      }
       setSelectedTeamId(null);
       setStatus(`${team.name} deleted.`);
     } catch (deleteError) {
@@ -252,9 +357,10 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
             </button>
           </div>
           <form onSubmit={(event) => void handleTeamSubmit(event)} className="mt-5 grid gap-4 md:grid-cols-2">
-            <div className="grid grid-cols-2 gap-2 md:col-span-2">
+            <div className={`grid gap-2 md:col-span-2 ${canManagePopular ? "grid-cols-3" : "grid-cols-2"}`}>
               <ToggleButton active={destination === "own"} onClick={() => setDestination("own")}>My teams</ToggleButton>
               <ToggleButton active={destination === "opponent"} onClick={() => setDestination("opponent")}>Opponent teams</ToggleButton>
+              {canManagePopular ? <ToggleButton active={destination === "popular"} onClick={() => setDestination("popular")}>Popular teams</ToggleButton> : null}
             </div>
 
             <FieldLabel label="Team name">
@@ -327,11 +433,16 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
       <section className="py-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <SectionHeading icon={UsersRound} title="Team library" />
-          <div className="grid grid-cols-2 rounded-md bg-muted p-1">
+          <div className="grid grid-cols-3 rounded-md bg-muted p-1">
             <ToggleButton compact active={activeList === "own"} onClick={() => setActiveList("own")}>My teams</ToggleButton>
             <ToggleButton compact active={activeList === "opponent"} onClick={() => setActiveList("opponent")}>Opponents</ToggleButton>
+            <ToggleButton compact active={activeList === "popular"} onClick={() => setActiveList("popular")}>Popular teams</ToggleButton>
           </div>
         </div>
+
+        {activeList === "popular" && popularLoadError ? (
+          <p className="mt-4 text-sm text-destructive" role="alert">{popularLoadError}</p>
+        ) : null}
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           <FilterAutocomplete
@@ -339,7 +450,8 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
             value={searchText}
             onChange={setSearchText}
             placeholder="Regional, ladder, rain..."
-            getSuggestions={(value) => getSourceSuggestions(library[activeList], value)}
+            getSuggestions={activeList === "popular" ? undefined : (value) => getSourceSuggestions(library[activeList], value)}
+            loadSuggestions={activeList === "popular" ? suggestPopularSources : undefined}
             complete={(_value, _caret, suggestion) => ({ value: suggestion, caret: suggestion.length })}
           />
           <div className="flex items-end gap-2">
@@ -348,7 +460,8 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
               value={pokemonFilter}
               onChange={setPokemonFilter}
               placeholder="Pelipper, Archaludon"
-              getSuggestions={(value, caret) => getPokemonSuggestions(library[activeList], value, caret)}
+              getSuggestions={activeList === "popular" ? undefined : (value, caret) => getPokemonSuggestions(library[activeList], value, caret)}
+              loadSuggestions={activeList === "popular" ? suggestPopularPokemon : undefined}
               complete={(value, caret, suggestion) => completePokemonTerm(value, suggestion, caret)}
             />
               {hasFilters ? (
@@ -366,18 +479,27 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
         </div>
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[300px_1fr]">
-          <TeamSelector
-            teams={visibleTeams}
-            selectedTeamId={selectedTeam?.id ?? null}
-            isLoading={isLoadingTeams}
-            hasFilters={hasFilters}
-            onSelect={setSelectedTeamId}
-          />
+          <div>
+            <TeamSelector
+              teams={visibleTeams}
+              selectedTeamId={selectedTeam?.id ?? null}
+              isLoading={activeList === "popular" ? isLoadingPopular && popularTeams.length === 0 : isLoadingTeams}
+              hasFilters={hasFilters}
+              isPopular={activeList === "popular"}
+              onSelect={setSelectedTeamId}
+            />
+            {activeList === "popular" && popularHasMore ? (
+              <button className="mt-3 h-10 w-full rounded-md border border-border text-sm font-semibold hover:bg-secondary disabled:opacity-60" type="button" disabled={isLoadingPopular} onClick={() => void loadMorePopularTeams()}>
+                {isLoadingPopular ? "Loading..." : "Load more"}
+              </button>
+            ) : null}
+          </div>
           <TeamViewer
             team={selectedTeam}
             isDeleting={isDeleting}
-            onEdit={openTeamEditor}
-            onDelete={handleDeleteTeam}
+            isPopular={activeList === "popular"}
+            onEdit={activeList === "popular" && !canManagePopular ? undefined : openTeamEditor}
+            onDelete={activeList === "popular" && !canManagePopular ? undefined : handleDeleteTeam}
           />
         </div>
       </section>
@@ -386,7 +508,8 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
         open={isEditorOpen}
         initialTeam={editorTeam}
         sources={sources}
-        defaultDestination={destination}
+        defaultDestination={editorCollection}
+        canManagePopular={canManagePopular}
         onOpenChange={setIsEditorOpen}
         onSave={handleEditorSave}
       />
@@ -396,16 +519,17 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
 
 const inputClassName = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20";
 
-function TeamSelector({ teams, selectedTeamId, isLoading, hasFilters, onSelect }: {
+function TeamSelector({ teams, selectedTeamId, isLoading, hasFilters, isPopular, onSelect }: {
   teams: SavedTeam[];
   selectedTeamId: string | null;
   isLoading: boolean;
   hasFilters: boolean;
+  isPopular: boolean;
   onSelect: (id: string) => void;
 }) {
   if (isLoading) return <p className="py-8 text-sm text-muted-foreground">Loading teams...</p>;
   if (teams.length === 0) {
-    return <p className="rounded-md bg-muted px-4 py-8 text-center text-sm text-muted-foreground">{hasFilters ? "No teams match these filters." : "No saved teams yet."}</p>;
+    return <p className="rounded-md bg-muted px-4 py-8 text-center text-sm text-muted-foreground">{hasFilters ? "No teams match these filters." : isPopular ? "No popular teams yet." : "No saved teams yet."}</p>;
   }
 
   return (
@@ -442,7 +566,7 @@ function FieldLabel({ label, className = "", children }: { label: string; classN
 
 function ToggleButton({ active, children, onClick, compact = false }: { active: boolean; children: ReactNode; onClick: () => void; compact?: boolean }) {
   return (
-    <button className={`${compact ? "h-8" : "h-10"} rounded-md border px-3 text-sm font-semibold transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:bg-secondary"}`} type="button" onClick={onClick}>
+    <button className={`${compact ? "min-h-8 px-2 py-1 text-xs sm:px-3 sm:text-sm" : "min-h-10 px-2 py-1 text-xs sm:px-3 sm:text-sm"} rounded-md border font-semibold transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:bg-secondary"}`} type="button" onClick={onClick}>
       {children}
     </button>
   );

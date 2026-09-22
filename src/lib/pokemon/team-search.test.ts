@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   completePokemonTerm,
   filterTeams,
+  getPokemonSuggestionContext,
   getPokemonSuggestions,
   getSourceSuggestions,
   getTeamSources
@@ -71,6 +72,7 @@ describe("team search", () => {
   it("completes a Pokemon term in the middle without changing other terms", () => {
     const query = "Pelipper, Arch, Torkoal";
     const caret = query.indexOf("Arch") + 4;
+    expect(getPokemonSuggestionContext(query, caret)).toEqual({ prefix: "Arch", excluded: ["Pelipper", "Torkoal"] });
     expect(completePokemonTerm(query, "Archaludon", caret).value).toBe("Pelipper, Archaludon, Torkoal");
     expect(getPokemonSuggestions([rain, sun], "Pelipper, Peli")).toEqual([]);
   });

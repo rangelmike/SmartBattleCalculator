@@ -50,19 +50,25 @@ export function getPokemonSuggestions(
   caret = query.length,
   limit = 6
 ): TeamSearchSuggestion[] {
-  const { start, end } = pokemonTermBounds(query, caret);
-  const prefix = normalize(query.slice(start, caret));
+  const context = getPokemonSuggestionContext(query, caret);
+  const prefix = normalize(context.prefix);
   if (!prefix) return [];
 
-  const selected = new Set(query
+  const selected = new Set(context.excluded.map(normalize));
+  const names = teams.flatMap((team) => [...new Set(team.team.members.map((member) => member.species))]);
+  return rankSuggestions(names, prefix, selected, limit);
+}
+
+export function getPokemonSuggestionContext(query: string, caret = query.length) {
+  const { start, end } = pokemonTermBounds(query, caret);
+  const excluded = query
     .split(",")
     .map((part, index, parts) => {
       const offset = parts.slice(0, index).reduce((sum, value) => sum + value.length + 1, 0);
-      return offset >= start && offset < end ? "" : normalize(part);
+      return offset >= start && offset < end ? "" : part.trim();
     })
-    .filter(Boolean));
-  const names = teams.flatMap((team) => [...new Set(team.team.members.map((member) => member.species))]);
-  return rankSuggestions(names, prefix, selected, limit);
+    .filter(Boolean);
+  return { prefix: query.slice(start, caret).trim(), excluded };
 }
 
 export function completePokemonTerm(query: string, species: string, caret = query.length) {
