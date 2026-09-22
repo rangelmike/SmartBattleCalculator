@@ -9,7 +9,7 @@ Pokepaste/Showdown, and quick AI suggestions.
 - Pokemon data and damage: `@pkmn/dex`, `@pkmn/sets`, `@smogon/calc`.
 - Backend, authentication, and database: Supabase.
 - AI: Gemini API through Supabase Edge Functions.
-- Recommended hosting: Cloudflare Pages.
+- Frontend hosting: GitHub Pages, deployed by GitHub Actions.
 - Quality: ESLint, Prettier, Vitest, Playwright.
 
 ## Local setup
@@ -57,3 +57,4 @@ Pokepaste/Showdown, and quick AI suggestions.
 - `npm run supabase:functions:serve`: local Edge Functions.
 
 Read [docs/architecture.md](./docs/architecture.md) before implementing major features.
+See [docs/setup.md](./docs/setup.md) for GitHub Pages and Supabase deployment setup.

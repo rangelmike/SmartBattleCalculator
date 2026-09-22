@@ -5,7 +5,7 @@
 1. GitHub repository.
 2. Supabase project.
 3. Google AI Studio API key for Gemini.
-4. Cloudflare Pages project connected to GitHub.
+4. GitHub Pages enabled for the repository.
 
 ## Supabase
 
@@ -34,16 +34,17 @@
    supabase secrets set GEMINI_API_KEY=your_key GEMINI_MODEL=gemini-3.1-flash-lite
    ```
 
-## Cloudflare Pages
+## GitHub Pages
 
-- Framework preset: Vite.
-- Build command: `npm run build`.
-- Build output directory: `dist`.
-- Add only public frontend env vars:
-  - `VITE_SUPABASE_URL`
-  - `VITE_SUPABASE_ANON_KEY`
+1. In the GitHub repository, open **Settings > Pages** and select **GitHub Actions** as the build and deployment source.
+2. Open **Settings > Secrets and variables > Actions > Variables** and create these repository variables:
+   - `VITE_SUPABASE_URL`: your Supabase Project URL;
+   - `VITE_SUPABASE_ANON_KEY`: your Supabase publishable/anon key.
+3. Push to `main`, or run **Actions > Deploy to GitHub Pages > Run workflow**. The workflow checks types and tests, builds with `GITHUB_PAGES=true`, and publishes `dist`.
+4. Check the deployment at `https://rangelmike.github.io/SmartBattleCalculator/`. If you rename the repository or use a custom domain, update the `base` setting in `vite.config.ts`.
+5. In Supabase **Authentication > URL Configuration**, set **Site URL** to `https://rangelmike.github.io/SmartBattleCalculator/` and add that URL and `http://localhost:5173/` to **Redirect URLs**. Add other origins only if you actually use them.
 
-## GitHub
+The two `VITE_` values are public browser configuration, not server secrets. Keep `GEMINI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` out of GitHub Pages variables and the frontend. GitHub Pages hosts only static files; Supabase hosts Auth, the database, and Edge Functions.
 
 Keep the repo connected to Codex. The project `AGENTS.md` explains the architecture and guardrails
 so future tasks follow the same structure.

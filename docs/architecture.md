@@ -56,13 +56,17 @@ docs/                     Architecture and operating notes
 
 ## Deployment
 
-- Cloudflare Pages:
-  - build command: `npm run build`;
-  - output directory: `dist`;
-  - environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+- GitHub Pages:
+  - `.github/workflows/deploy-pages.yml` builds with `npm run build` and publishes `dist` on pushes to `main`;
+  - the Vite production base is `/SmartBattleCalculator/`, matching the repository's Pages URL;
+  - GitHub Actions repository variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are embedded in the frontend build;
+  - the browser uses hash navigation, so no server-side route fallback is needed.
 - Supabase:
   - apply migrations;
-  - set Edge Function secrets: `GEMINI_API_KEY`, `GEMINI_MODEL`.
+  - configure the GitHub Pages URL for Auth redirects;
+  - deploy Edge Functions and set their secrets: `GEMINI_API_KEY`, `GEMINI_MODEL`.
+
+GitHub Pages serves static files only. Supabase handles authentication, data, and server-side AI calls.
 
 ## Security rules
 
