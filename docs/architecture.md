@@ -42,6 +42,7 @@ docs/                     Architecture and operating notes
 - `profiles`: one row per auth user.
 - `teams`: saved teams, raw paste text, normalized JSON and stable hash.
 - `popular_teams`: shared, Champions-validated teams with a searchable species list. Authenticated readers use bounded server-side search and suggestion RPCs; only the verified designated administrator can write under RLS.
+- `popular_pokemon_common_sets`: one materialized usage summary per species (four most-used moves, modal item, ability, full EV spread and nature). A database trigger refreshes only species touched by a popular-team insert, edit or delete; an additive migration backfills existing teams.
 - `ai_recommendation_cache`: cached Gemini/heuristic responses by team hash pair.
 - `usage_events`: optional lightweight telemetry for imports and AI calls.
 

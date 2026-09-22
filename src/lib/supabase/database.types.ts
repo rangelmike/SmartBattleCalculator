@@ -15,6 +15,17 @@ export type PopularTeamRow = {
   updated_at: string;
 };
 
+export type PopularPokemonCommonSetRow = {
+  species: string;
+  sample_size: number;
+  moves: string[];
+  item: string;
+  ability: string;
+  evs: Json;
+  nature: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -106,6 +117,12 @@ export type Database = {
           species_names?: string[];
           updated_at?: string;
         };
+        Relationships: [];
+      };
+      popular_pokemon_common_sets: {
+        Row: PopularPokemonCommonSetRow;
+        Insert: PopularPokemonCommonSetRow;
+        Update: Partial<PopularPokemonCommonSetRow>;
         Relationships: [];
       };
       team_collections: {
