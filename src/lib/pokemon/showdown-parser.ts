@@ -1,70 +1,45 @@
-import type { PokemonSpread, PokemonTeam, TeamMember } from "@/lib/pokemon/types";
-
-const statMap: Record<string, keyof PokemonSpread> = {
-  HP: "hp",
-  Atk: "atk",
-  Def: "def",
-  SpA: "spa",
-  SpD: "spd",
-  Spe: "spe"
-};
+import { Teams } from "@pkmn/sets";
+import type { PokemonSet } from "@pkmn/sets";
+import type { PokemonTeam, TeamMember } from "@/lib/pokemon/types";
 
 export function parseShowdownPaste(pasteText: string, format = "vgc"): PokemonTeam {
-  const blocks = pasteText
-    .split(/\n\s*\n/g)
-    .map((block) => block.trim())
-    .filter(Boolean);
+  const normalizedText = pasteText.trim();
 
-  const members = blocks.map(parsePokemonBlock);
+  if (!normalizedText) {
+    throw new Error("The team text cannot be empty.");
+  }
+
+  const importedTeam = Teams.importTeam(normalizedText);
+  const members = importedTeam?.team.map(toTeamMember) ?? [];
 
   if (members.length > 6) {
-    throw new Error("Un equipo no puede tener mas de 6 Pokemon.");
+    throw new Error("A team cannot have more than 6 Pokemon.");
+  }
+
+  if (members.length === 0) {
+    throw new Error("No Pokemon were found in the imported text.");
   }
 
   return { format, members };
 }
 
-function parsePokemonBlock(block: string): TeamMember {
-  const lines = block
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+function toTeamMember(set: Partial<PokemonSet<string>>): TeamMember {
+  const species = set.species?.trim();
 
-  const header = lines[0] ?? "";
-  const itemSplit = header.split(" @ ");
-  const identity = itemSplit[0]?.trim() ?? "";
-  const speciesMatch = identity.match(/\(([^)]+)\)/);
-  const species = speciesMatch?.[1] ?? identity;
-
-  const member: TeamMember = {
-    name: speciesMatch ? identity.replace(/\s*\([^)]+\)/, "").trim() : species,
-    species,
-    item: itemSplit[1]?.trim(),
-    level: 50,
-    evs: {},
-    ivs: {},
-    moves: []
-  };
-
-  for (const line of lines.slice(1)) {
-    if (line.startsWith("Ability: ")) member.ability = line.replace("Ability: ", "").trim();
-    else if (line.startsWith("Level: ")) member.level = Number(line.replace("Level: ", "").trim());
-    else if (line.startsWith("Tera Type: ")) member.teraType = line.replace("Tera Type: ", "").trim();
-    else if (line.endsWith(" Nature")) member.nature = line.replace(" Nature", "").trim() as TeamMember["nature"];
-    else if (line.startsWith("EVs: ")) member.evs = parseSpread(line.replace("EVs: ", ""));
-    else if (line.startsWith("IVs: ")) member.ivs = parseSpread(line.replace("IVs: ", ""));
-    else if (line.startsWith("- ")) member.moves.push(line.replace("- ", "").trim());
+  if (!species) {
+    throw new Error("Each Pokemon needs a valid species.");
   }
 
-  return member;
-}
-
-function parseSpread(spreadText: string): PokemonSpread {
-  return Object.fromEntries(
-    spreadText.split("/").map((part) => {
-      const match = part.trim().match(/^(\d+)\s+(\w+)$/);
-      if (!match) return ["hp", 0];
-      return [statMap[match[2]] ?? "hp", Number(match[1])];
-    })
-  );
+  return {
+    name: set.name?.trim() || species,
+    species,
+    item: set.item?.trim() || undefined,
+    ability: set.ability?.trim() || undefined,
+    level: set.level ?? 50,
+    evs: set.evs ?? {},
+    ivs: set.ivs ?? {},
+    moves: set.moves?.filter(Boolean) ?? [],
+    nature: set.nature as TeamMember["nature"],
+    teraType: set.teraType?.trim() || undefined
+  };
 }

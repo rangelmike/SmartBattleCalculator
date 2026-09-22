@@ -20,6 +20,7 @@ export type Database = {
           username?: string | null;
           updated_at?: string;
         };
+        Relationships: [];
       };
       teams: {
         Row: {
@@ -53,6 +54,7 @@ export type Database = {
         Update: {
           name?: string;
           format?: string;
+          source?: string;
           paste_url?: string | null;
           paste_text?: string;
           team_json?: Json;
@@ -60,6 +62,25 @@ export type Database = {
           is_public?: boolean;
           updated_at?: string;
         };
+        Relationships: [];
+      };
+      team_collections: {
+        Row: {
+          user_id: string;
+          team_id: string;
+          list_kind: "own" | "opponent";
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          team_id: string;
+          list_kind: "own" | "opponent";
+          created_at?: string;
+        };
+        Update: {
+          list_kind?: "own" | "opponent";
+        };
+        Relationships: [];
       };
       ai_recommendation_cache: {
         Row: {
@@ -80,8 +101,15 @@ export type Database = {
           response_json: Json;
           created_at?: string;
         };
-        Update: never;
+        Update: {
+          response_json?: Json;
+        };
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 };

@@ -1,62 +1,80 @@
-import { Calculator, Sparkles, UsersRound } from "lucide-react";
-
-const nextMilestones = [
-  {
-    icon: Calculator,
-    title: "Damage Calculator",
-    text: "Motor con @smogon/calc, matriz de matchups y soporte VGC."
-  },
-  {
-    icon: UsersRound,
-    title: "Perfiles y equipos",
-    text: "Supabase Auth, equipos de 6, Pokepaste y Row Level Security."
-  },
-  {
-    icon: Sparkles,
-    title: "Sugerencias IA",
-    text: "Heuristica rapida + Gemini JSON + cache por hash de equipos."
-  }
-];
+import { useEffect, useState } from "react";
+import { AuthPage } from "@/features/auth/AuthPage";
+import { CalculatorPage } from "@/features/calculator/CalculatorPage";
+import { AppShell, type AppPage } from "@/features/navigation/AppShell";
+import { ProfilePage } from "@/features/teams/ProfilePage";
+import {
+  getInitialProfile,
+  signOutProfile,
+  subscribeToProfileChanges,
+  type AppProfile
+} from "@/lib/supabase/auth";
 
 export function App() {
+  const [profile, setProfile] = useState<AppProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activePage, setActivePage] = useState<AppPage>(readPageFromHash);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void getInitialProfile()
+      .then((initialProfile) => {
+        if (isMounted) setProfile(initialProfile);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    const unsubscribe = subscribeToProfileChanges((nextProfile) => {
+      setProfile(nextProfile);
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleHashChange = () => setActivePage(readPageFromHash());
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  async function handleLogout() {
+    await signOutProfile();
+    setProfile(null);
+  }
+
+  function handleNavigate(page: AppPage) {
+    window.location.hash = page;
+    setActivePage(page);
+  }
+
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <p className="text-sm font-medium text-muted-foreground">Loading profile...</p>
+      </main>
+    );
+  }
+
+  if (!profile) {
+    return <AuthPage onAuthenticated={setProfile} />;
+  }
+
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-3 border-b border-border pb-6">
-          <p className="text-sm font-medium text-muted-foreground">Smart Battle Calculator</p>
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-3xl">
-              <h1 className="text-3xl font-semibold tracking-normal sm:text-4xl">
-                Base lista para construir la calculadora competitiva
-              </h1>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
-                React, Supabase, Smogon calc, Pokepaste e IA quedaron organizados para crecer sin
-                mezclar responsabilidades.
-              </p>
-            </div>
-          </div>
-        </header>
-
-        <section className="grid gap-4 md:grid-cols-3">
-          {nextMilestones.map((item) => (
-            <article key={item.title} className="rounded-lg border border-border bg-card p-5">
-              <item.icon aria-hidden className="mb-4 h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold">{item.title}</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</p>
-            </article>
-          ))}
-        </section>
-
-        <section className="grid gap-4 rounded-lg border border-border bg-card p-5">
-          <h2 className="text-lg font-semibold">Primeros comandos</h2>
-          <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-            <code className="rounded-md bg-muted px-3 py-2 text-foreground">npm install</code>
-            <code className="rounded-md bg-muted px-3 py-2 text-foreground">npm run dev</code>
-            <code className="rounded-md bg-muted px-3 py-2 text-foreground">supabase start</code>
-            <code className="rounded-md bg-muted px-3 py-2 text-foreground">npm run test</code>
-          </div>
-        </section>
-      </section>
-    </main>
+    <AppShell activePage={activePage} profile={profile} onNavigate={handleNavigate} onLogout={() => void handleLogout()}>
+      {activePage === "profile" ? (
+        <ProfilePage profile={profile} onProfileUpdated={setProfile} />
+      ) : (
+        <CalculatorPage />
+      )}
+    </AppShell>
   );
+}
+
+function readPageFromHash(): AppPage {
+  return window.location.hash === "#profile" ? "profile" : "calculator";
 }

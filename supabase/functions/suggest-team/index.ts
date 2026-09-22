@@ -91,8 +91,8 @@ async function askGemini(matchupSummary: unknown) {
             parts: [
               {
                 text:
-                  "Eres un asistente VGC. Devuelve solo JSON valido. Elige exactamente 4 Pokemon, " +
-                  "ordena leads/uso y explica de forma breve. No inventes Pokemon fuera del resumen."
+                  "You are a VGC assistant. Return valid JSON only. Choose exactly 4 Pokemon, " +
+                  "order the leads and usage, and explain briefly in English. Do not invent Pokemon outside the summary."
               }
             ]
           },
@@ -142,7 +142,7 @@ function fallbackSuggestion() {
     selectedPokemon: [],
     leadOrder: [],
     confidence: 0,
-    reasons: ["No se pudo obtener respuesta de IA; usa la heuristica local."],
+    reasons: ["Could not get an AI response; use the local heuristic."],
     risks: [],
     fallbackUsed: true
   };
