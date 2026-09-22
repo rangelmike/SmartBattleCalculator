@@ -61,9 +61,25 @@ describe("team stats", () => {
   it("offers Mega only for a matching stone and a Champions form", () => {
     expect(getChampionsMegaSpecies({ species: "Swampert", item: "Swampertite" })).toBe("Swampert-Mega");
     expect(getChampionsMegaSpecies({ species: "Metagross", item: "Metagrossite" })).toBe("Metagross-Mega");
+    expect(getChampionsMegaSpecies({ species: "Charizard", item: "Charizardite X" })).toBe("Charizard-Mega-X");
+    expect(getChampionsMegaSpecies({ species: "Charizard", item: "Charizardite Y" })).toBe("Charizard-Mega-Y");
+    expect(getChampionsMegaSpecies({ species: "Lucario", item: "Lucarionite Z" })).toBe("Lucario-Mega-Z");
     expect(getChampionsMegaSpecies({ species: "Swampert", item: "Light Clay" })).toBeNull();
     expect(getChampionsMegaSpecies({ species: "Swampert", item: "Salamencite" })).toBeNull();
+    expect(getChampionsMegaSpecies({ species: "Charizard", item: "Lucarionite Z" })).toBeNull();
     expect(getChampionsMegaSpecies({ species: "Grimmsnarl", item: "Grimmsnarlite" })).toBeNull();
+  });
+
+  it("recognizes every Champions Mega Stone with an X, Y, or Z suffix", () => {
+    let checked = 0;
+    for (const item of Generations.get(0).items) {
+      if (!item.megaStone || !/ [XYZ]$/.test(item.name)) continue;
+      for (const [species, megaSpecies] of Object.entries(item.megaStone)) {
+        expect(getChampionsMegaSpecies({ species, item: item.name })).toBe(megaSpecies);
+        checked += 1;
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
   });
 
   it("recalculates level 50 stats using the selected Mega form", () => {

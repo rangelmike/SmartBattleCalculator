@@ -64,10 +64,6 @@ export function calculateLevel50Stats(
 export function getChampionsMegaSpecies(member: Pick<TeamMember, "species" | "item">) {
   const speciesId = toID(member.species);
   const itemId = toID(member.item ?? "");
-  if (speciesId.length < 3 || !itemId.endsWith("ite") || !itemId.startsWith(speciesId.slice(0, 3))) {
-    return null;
-  }
-
   const stone = champions.items.get(itemId)?.megaStone;
   const megaName = Object.entries(stone ?? {}).find(([baseSpecies]) => toID(baseSpecies) === speciesId)?.[1];
   return megaName ? champions.species.get(toID(megaName))?.name ?? null : null;

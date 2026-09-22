@@ -29,21 +29,20 @@ const team: SavedTeam = {
 };
 
 describe("team viewer", () => {
-  it("shows level 50 and base stats for regular and Mega forms", () => {
+  it("defaults to Mega stats and can switch to the regular form", () => {
     render(<TeamViewer team={team} />);
-    expect(screen.getByText("Base 110")).toBeVisible();
-    expect(screen.getByText("Level 50 · Champions")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Mega" }));
+    expect(screen.getByRole("button", { name: "Mega" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Base 150")).toBeVisible();
+    expect(screen.getByText("Level 50 · Champions")).toBeVisible();
     expect(screen.getByRole("img", { name: "Swampert-Mega" })).toHaveAttribute(
       "src", "https://play.pokemonshowdown.com/sprites/ani/swampert-mega.gif"
     );
+    fireEvent.click(screen.getByRole("button", { name: "Normal" }));
+    expect(screen.getByText("Base 110")).toBeVisible();
   });
 
   it("keeps the form switch for older teams saved with a VGC format", () => {
     render(<TeamViewer team={{ ...team, team: { ...team.team, format: "vgc" } }} />);
-    expect(screen.getByRole("button", { name: "Normal" })).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(screen.getByRole("button", { name: "Mega" }));
     expect(screen.getByRole("button", { name: "Mega" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("img", { name: "Swampert-Mega" })).toHaveAttribute(
       "src", "https://play.pokemonshowdown.com/sprites/ani/swampert-mega.gif"
@@ -54,5 +53,18 @@ describe("team viewer", () => {
       "src", "https://play.pokemonshowdown.com/sprites/ani/swampert.gif"
     );
     expect(screen.getByText("Base 110")).toBeVisible();
+  });
+
+  it.each([
+    ["Charizard", "Charizardite X", "Charizard-Mega-X"],
+    ["Charizard", "Charizardite Y", "Charizard-Mega-Y"],
+    ["Lucario", "Lucarionite Z", "Lucario-Mega-Z"]
+  ])("defaults to %s Mega form with %s", (species, item, megaSpecies) => {
+    const member = { ...team.team.members[0], name: species, species, item };
+    render(<TeamViewer team={{ ...team, team: { ...team.team, members: [member] } }} />);
+    expect(screen.getByRole("button", { name: "Mega" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("img", { name: megaSpecies })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Normal" }));
+    expect(screen.getByRole("img", { name: species })).toBeVisible();
   });
 });
