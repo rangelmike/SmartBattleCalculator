@@ -1,5 +1,6 @@
 import { calcStat, Generations, toID } from "@smogon/calc";
 import { Dex } from "@pkmn/dex";
+import championsSprites from "@/lib/pokemon/champions-sprites.json";
 import type { PokemonSpread, TeamMember } from "@/lib/pokemon/types";
 
 export const pokemonStatIds = ["hp", "atk", "def", "spa", "spd", "spe"] as const;
@@ -53,7 +54,11 @@ export function calculateLevel50Stats(
     ])
   ) as Level50Stats;
 
-  return { model, stats };
+  const baseStats = Object.fromEntries(
+    pokemonStatIds.map((stat) => [stat, species.baseStats[stat]])
+  ) as Level50Stats;
+
+  return { model, stats, baseStats };
 }
 
 export function getChampionsMegaSpecies(member: Pick<TeamMember, "species" | "item">) {
@@ -84,12 +89,6 @@ export function getChampionsMoveDetails(moveName: string) {
 }
 
 export function getPokemonSpriteUrl(speciesName: string) {
-  const speciesId = toID(speciesName);
-
-  if (!speciesId) {
-    return undefined;
-  }
-
-  const spriteName = speciesName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return `https://play.pokemonshowdown.com/sprites/ani/${spriteName}.gif`;
+  const file = (championsSprites as Record<string, string>)[toID(speciesName)];
+  return file ? `https://play.pokemonshowdown.com/sprites/ani/${file}` : undefined;
 }

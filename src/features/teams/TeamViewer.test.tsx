@@ -1,0 +1,42 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { TeamViewer } from "@/features/teams/TeamViewer";
+import type { SavedTeam } from "@/lib/pokemon/team-import";
+
+const team: SavedTeam = {
+  id: "team-1",
+  ownerId: "user-1",
+  name: "Rain",
+  source: "Regional",
+  pasteText: "",
+  teamHash: "hash-1",
+  createdAt: "2026-09-22T00:00:00.000Z",
+  updatedAt: "2026-09-22T00:00:00.000Z",
+  team: {
+    format: "champions",
+    members: [{
+      name: "Swampert",
+      species: "Swampert",
+      item: "Swampertite",
+      ability: "Damp",
+      level: 50,
+      nature: "Adamant",
+      evs: { hp: 18, atk: 30, spe: 18 },
+      ivs: {},
+      moves: ["Protect"]
+    }]
+  }
+};
+
+describe("team viewer", () => {
+  it("shows level 50 and base stats for regular and Mega forms", () => {
+    render(<TeamViewer team={team} />);
+    expect(screen.getByText("Base 110")).toBeVisible();
+    expect(screen.getByText("Level 50 · Champions")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Mega" }));
+    expect(screen.getByText("Base 150")).toBeVisible();
+    expect(screen.getByRole("img", { name: "Swampert-Mega" })).toHaveAttribute(
+      "src", "https://play.pokemonshowdown.com/sprites/ani/swampert-mega.gif"
+    );
+  });
+});

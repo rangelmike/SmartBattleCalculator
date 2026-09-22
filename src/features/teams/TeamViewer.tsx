@@ -95,6 +95,7 @@ function PokemonCard({ member, isChampions }: { member: TeamMember; isChampions:
   const spriteUrl = getPokemonSpriteUrl(displaySpecies);
   const natureModifiers = getNatureModifiers(member.nature);
   let stats: Level50Stats | null = null;
+  let baseStats: Level50Stats | null = null;
   let model: "champions" | "standard" = "standard";
 
   try {
@@ -103,6 +104,7 @@ function PokemonCard({ member, isChampions }: { member: TeamMember; isChampions:
       model: isChampions ? "champions" : undefined
     });
     stats = calculated.stats;
+    baseStats = calculated.baseStats;
     model = calculated.model;
   } catch {
     stats = null;
@@ -183,7 +185,10 @@ function PokemonCard({ member, isChampions }: { member: TeamMember; isChampions:
                   <dt className={natureModifiers.plus === stat || natureModifiers.minus === stat ? "font-semibold" : "text-muted-foreground"}>
                     {statLabels[stat]} {natureModifiers.plus === stat ? "↑" : natureModifiers.minus === stat ? "↓" : ""}
                   </dt>
-                  <dd className="font-semibold tabular-nums">{stats?.[stat] ?? "--"}</dd>
+                  <dd className="text-right tabular-nums">
+                    <div className="font-semibold">{stats?.[stat] ?? "--"}</div>
+                    <div className="text-[10px] font-medium opacity-70">Base {baseStats?.[stat] ?? "--"}</div>
+                  </dd>
                 </div>
                 <p className="mt-0.5 text-[10px] tabular-nums opacity-80">EV {member.evs[stat] ?? 0}</p>
               </div>

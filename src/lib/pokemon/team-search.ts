@@ -5,6 +5,8 @@ export type TeamSearchFilters = {
   pokemon: string;
 };
 
+export type TeamSearchSuggestion = { name: string; teamCount: number };
+
 export function filterTeams(teams: SavedTeam[], filters: TeamSearchFilters) {
   const text = normalize(filters.text);
   const pokemonTerms = filters.pokemon
@@ -33,13 +35,68 @@ export function getTeamSources(library: TeamLibrary) {
     }
   }
 
-  return [...sources.values()].sort((left, right) => left.localeCompare(right, "es"));
+  return [...sources.values()].sort((left, right) => left.localeCompare(right, "en"));
+}
+
+export function getSourceSuggestions(teams: SavedTeam[], query: string, limit = 6): TeamSearchSuggestion[] {
+  const prefix = normalize(query);
+  if (!prefix) return [];
+  return rankSuggestions(teams.flatMap((team) => team.source.trim() ? [team.source.trim()] : []), prefix, new Set(), limit);
+}
+
+export function getPokemonSuggestions(
+  teams: SavedTeam[],
+  query: string,
+  caret = query.length,
+  limit = 6
+): TeamSearchSuggestion[] {
+  const { start, end } = pokemonTermBounds(query, caret);
+  const prefix = normalize(query.slice(start, caret));
+  if (!prefix) return [];
+
+  const selected = new Set(query
+    .split(",")
+    .map((part, index, parts) => {
+      const offset = parts.slice(0, index).reduce((sum, value) => sum + value.length + 1, 0);
+      return offset >= start && offset < end ? "" : normalize(part);
+    })
+    .filter(Boolean));
+  const names = teams.flatMap((team) => [...new Set(team.team.members.map((member) => member.species))]);
+  return rankSuggestions(names, prefix, selected, limit);
+}
+
+export function completePokemonTerm(query: string, species: string, caret = query.length) {
+  const { start, end } = pokemonTermBounds(query, caret);
+  const before = query.slice(0, start).trimEnd();
+  const after = query.slice(end).trimStart();
+  const value = `${before}${before ? " " : ""}${species}${after}`;
+  return { value, caret: before.length + (before ? 1 : 0) + species.length };
+}
+
+function pokemonTermBounds(query: string, caret: number) {
+  const position = Math.max(0, Math.min(caret, query.length));
+  const start = query.lastIndexOf(",", Math.max(0, position - 1)) + 1;
+  const nextComma = query.indexOf(",", position);
+  return { start, end: nextComma === -1 ? query.length : nextComma };
+}
+
+function rankSuggestions(values: string[], prefix: string, excluded: Set<string>, limit: number) {
+  const counts = new Map<string, TeamSearchSuggestion>();
+  for (const name of values) {
+    const key = normalize(name);
+    if (!key.startsWith(prefix) || key === prefix || excluded.has(key)) continue;
+    const current = counts.get(key);
+    counts.set(key, { name: current?.name ?? name, teamCount: (current?.teamCount ?? 0) + 1 });
+  }
+  return [...counts.values()]
+    .sort((left, right) => right.teamCount - left.teamCount || left.name.localeCompare(right.name, "en"))
+    .slice(0, limit);
 }
 
 function normalize(value: string) {
   return value
     .trim()
-    .toLocaleLowerCase("es")
+    .toLocaleLowerCase("en")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }

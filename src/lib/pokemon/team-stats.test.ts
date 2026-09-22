@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { Generations } from "@smogon/calc";
+import championsSprites from "@/lib/pokemon/champions-sprites.json";
 import {
   calculateLevel50Stats,
   getChampionsMegaSpecies,
@@ -22,7 +24,8 @@ describe("team stats", () => {
 
     expect(calculateLevel50Stats(member)).toMatchObject({
       model: "standard",
-      stats: { hp: 176, spa: 187, spe: 205 }
+      stats: { hp: 176, spa: 187, spe: 205 },
+      baseStats: { hp: 100, spa: 135, spe: 135 }
     });
   });
 
@@ -44,9 +47,15 @@ describe("team stats", () => {
     });
   });
 
-  it("builds a sprite URL from Pokedex data", () => {
+  it("uses a verified sprite file for every Champions species", () => {
+    expect(Object.keys(championsSprites)).toHaveLength([...Generations.get(0).species].length);
+    for (const species of Generations.get(0).species) {
+      expect(getPokemonSpriteUrl(species.name)).toMatch(/^https:\/\/play\.pokemonshowdown\.com\/sprites\/ani\/[a-z0-9-]+\.gif$/);
+    }
     expect(getPokemonSpriteUrl("Pelipper")).toBe("https://play.pokemonshowdown.com/sprites/ani/pelipper.gif");
     expect(getPokemonSpriteUrl("Swampert-Mega")).toBe("https://play.pokemonshowdown.com/sprites/ani/swampert-mega.gif");
+    expect(getPokemonSpriteUrl("Sirfetch’d")).toBe("https://play.pokemonshowdown.com/sprites/ani/sirfetchd.gif");
+    expect(getPokemonSpriteUrl("Absol-Mega-Z")).toBe("https://play.pokemonshowdown.com/sprites/ani/absol.gif");
   });
 
   it("offers Mega only for a matching stone and a Champions form", () => {
@@ -71,6 +80,8 @@ describe("team stats", () => {
 
     const normal = calculateLevel50Stats(member, { model: "champions" }).stats;
     const mega = calculateLevel50Stats(member, { model: "champions", species: "Swampert-Mega" }).stats;
+    expect(calculateLevel50Stats(member, { model: "champions" }).baseStats.atk).toBe(110);
+    expect(calculateLevel50Stats(member, { model: "champions", species: "Swampert-Mega" }).baseStats.atk).toBe(150);
     expect(mega.hp).toBe(normal.hp);
     expect(mega.atk).toBeGreaterThan(normal.atk);
     expect(mega.spe).toBeGreaterThan(normal.spe);

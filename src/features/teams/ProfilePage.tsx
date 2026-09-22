@@ -6,13 +6,13 @@ import {
   Link,
   ListPlus,
   Plus,
-  Search,
   UserRound,
   UsersRound,
   X,
   type LucideIcon
 } from "lucide-react";
 import { TeamEditorDialog, type TeamEditorSubmission } from "@/features/teams/TeamEditorDialog";
+import { FilterAutocomplete } from "@/features/teams/FilterAutocomplete";
 import { TeamViewer } from "@/features/teams/TeamViewer";
 import {
   buildSavedTeamFromEditor,
@@ -24,7 +24,13 @@ import {
   type TeamLibrary,
   type TeamListKind
 } from "@/lib/pokemon/team-import";
-import { filterTeams, getTeamSources } from "@/lib/pokemon/team-search";
+import {
+  completePokemonTerm,
+  filterTeams,
+  getPokemonSuggestions,
+  getSourceSuggestions,
+  getTeamSources
+} from "@/lib/pokemon/team-search";
 import { updateProfileUsername, type AppProfile } from "@/lib/supabase/auth";
 import {
   deleteTeamFromLibrary,
@@ -328,25 +334,23 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <FieldLabel label="Name or source">
-            <div className="relative">
-              <Search aria-hidden className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                className={`${inputClassName} pl-9`}
-                value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
-                placeholder="Regional, ladder, rain..."
-              />
-            </div>
-          </FieldLabel>
-          <FieldLabel label="Included Pokemon">
-            <div className="flex gap-2">
-              <input
-                className={inputClassName}
-                value={pokemonFilter}
-                onChange={(event) => setPokemonFilter(event.target.value)}
-                placeholder="Pelipper, Archaludon"
-              />
+          <FilterAutocomplete
+            label="Name or source"
+            value={searchText}
+            onChange={setSearchText}
+            placeholder="Regional, ladder, rain..."
+            getSuggestions={(value) => getSourceSuggestions(library[activeList], value)}
+            complete={(_value, _caret, suggestion) => ({ value: suggestion, caret: suggestion.length })}
+          />
+          <div className="flex items-end gap-2">
+            <FilterAutocomplete
+              label="Included Pokemon"
+              value={pokemonFilter}
+              onChange={setPokemonFilter}
+              placeholder="Pelipper, Archaludon"
+              getSuggestions={(value, caret) => getPokemonSuggestions(library[activeList], value, caret)}
+              complete={(value, caret, suggestion) => completePokemonTerm(value, suggestion, caret)}
+            />
               {hasFilters ? (
                 <button
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border hover:bg-secondary"
@@ -358,8 +362,7 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
                   <X aria-hidden className="h-4 w-4" />
                 </button>
               ) : null}
-            </div>
-          </FieldLabel>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[300px_1fr]">
