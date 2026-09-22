@@ -90,7 +90,7 @@ export function TeamViewer({ team, isDeleting = false, onEdit, onDelete }: TeamV
 
 function PokemonCard({ member, isChampions }: { member: TeamMember; isChampions: boolean }) {
   const [showMega, setShowMega] = useState(false);
-  const megaSpecies = isChampions ? getChampionsMegaSpecies(member) : null;
+  const megaSpecies = getChampionsMegaSpecies(member);
   const displaySpecies = showMega && megaSpecies ? megaSpecies : member.species;
   const spriteUrl = getPokemonSpriteUrl(displaySpecies);
   const natureModifiers = getNatureModifiers(member.nature);

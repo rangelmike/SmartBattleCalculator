@@ -39,4 +39,20 @@ describe("team viewer", () => {
       "src", "https://play.pokemonshowdown.com/sprites/ani/swampert-mega.gif"
     );
   });
+
+  it("keeps the form switch for older teams saved with a VGC format", () => {
+    render(<TeamViewer team={{ ...team, team: { ...team.team, format: "vgc" } }} />);
+    expect(screen.getByRole("button", { name: "Normal" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Mega" }));
+    expect(screen.getByRole("button", { name: "Mega" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("img", { name: "Swampert-Mega" })).toHaveAttribute(
+      "src", "https://play.pokemonshowdown.com/sprites/ani/swampert-mega.gif"
+    );
+    expect(screen.getByText("Base 150")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Normal" }));
+    expect(screen.getByRole("img", { name: "Swampert" })).toHaveAttribute(
+      "src", "https://play.pokemonshowdown.com/sprites/ani/swampert.gif"
+    );
+    expect(screen.getByText("Base 110")).toBeVisible();
+  });
 });
