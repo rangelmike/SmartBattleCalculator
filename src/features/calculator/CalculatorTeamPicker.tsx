@@ -1,10 +1,12 @@
 import * as Dialog from "@radix-ui/react-dialog";
+import { toID } from "@smogon/calc";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { FilterAutocomplete } from "@/features/teams/FilterAutocomplete";
+import { championsSpecies } from "@/lib/pokemon/champions-data";
 import type { BattleSide } from "@/lib/pokemon/damage-calculation";
 import type { SavedTeam, TeamLibrary } from "@/lib/pokemon/team-import";
-import { completePokemonTerm, filterTeams, getPokemonSuggestions, getSourceSuggestions } from "@/lib/pokemon/team-search";
+import { completePokemonTerm, filterTeams, getPokemonSuggestionContext, getPokemonSuggestions, getSourceSuggestions, type TeamSearchSuggestion } from "@/lib/pokemon/team-search";
 import { getPokemonSpriteUrl } from "@/lib/pokemon/team-stats";
 import { searchPopularTeams, suggestPopularPokemon, suggestPopularSources } from "@/lib/supabase/popular-teams";
 
@@ -14,9 +16,13 @@ type Props = {
   library: TeamLibrary;
   onClose: () => void;
   onSelect: (team: SavedTeam) => void;
+  onAddPokemon: (species: string[]) => Promise<void>;
+  isAdding: boolean;
 };
 
-export function CalculatorTeamPicker({ open, side, library, onClose, onSelect }: Props) {
+const speciesById = new Map(championsSpecies.map((species) => [toID(species), species]));
+
+export function CalculatorTeamPicker({ open, side, library, onClose, onSelect, onAddPokemon, isAdding }: Props) {
   const [collection, setCollection] = useState<"personal" | "popular">("personal");
   const [text, setText] = useState("");
   const [pokemon, setPokemon] = useState("");
@@ -26,6 +32,21 @@ export function CalculatorTeamPicker({ open, side, library, onClose, onSelect }:
   const [error, setError] = useState<string | null>(null);
   const request = useRef(0);
   const personalTeams = side === "own" ? library.own : library.opponent;
+  const searchTerms = pokemon.split(",").map((term) => term.trim());
+  const pokemonTerms = searchTerms.filter(Boolean);
+  const matchedSpecies = pokemonTerms.map((term) => speciesById.get(toID(term)));
+  const canAddSearched = pokemonTerms.length > 0 && pokemonTerms.length <= 6 && searchTerms.every(Boolean) && matchedSpecies.every(Boolean);
+
+  async function addSearchedPokemon() {
+    if (!canAddSearched || isAdding) return;
+    setError(null);
+    try {
+      await onAddPokemon([...new Set(matchedSpecies.flatMap((species) => species ? [species] : []))]);
+      onClose();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not add Pokemon.");
+    }
+  }
 
   useEffect(() => {
     if (open) {
@@ -103,10 +124,17 @@ export function CalculatorTeamPicker({ open, side, library, onClose, onSelect }:
             />
             <FilterAutocomplete
               label="Included Pokemon" value={pokemon} onChange={setPokemon} placeholder="Pelipper, Archaludon"
-              getSuggestions={collection === "popular" ? undefined : (value, caret) => getPokemonSuggestions(personalTeams, value, caret)}
-              loadSuggestions={collection === "popular" ? suggestPopularPokemon : undefined}
+              getSuggestions={collection === "popular" ? undefined : (value, caret) => withChampionsSuggestions(getPokemonSuggestions(personalTeams, value, caret), value, caret)}
+              loadSuggestions={collection === "popular" ? async (value, caret) => withChampionsSuggestions(await suggestPopularPokemon(value, caret), value, caret) : undefined}
               complete={(value, caret, suggestion) => completePokemonTerm(value, suggestion, caret)}
             />
+            {pokemon.trim() ? (
+              <div className="flex justify-end sm:col-span-2">
+                <button className="flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:opacity-50" type="button" disabled={!canAddSearched || isAdding} title={canAddSearched ? "Add these Pokemon to the calculator" : "Complete up to six Pokemon names first"} onClick={() => void addSearchedPokemon()}>
+                  <Plus className="h-4 w-4" aria-hidden="true" /> {isAdding ? "Adding..." : "Add searched Pokemon"}
+                </button>
+              </div>
+            ) : null}
           </div>
           <div className="min-h-40 overflow-y-auto px-5 py-4">
             {error ? <p className="mb-3 text-sm text-destructive" role="alert">{error}</p> : null}
@@ -114,7 +142,7 @@ export function CalculatorTeamPicker({ open, side, library, onClose, onSelect }:
             {!isLoading && teams.length === 0 && !error ? <p className="py-8 text-center text-sm text-muted-foreground">No teams match your search.</p> : null}
             <div className="grid gap-2">
               {teams.map((team) => (
-                <button key={team.id} className="flex min-w-0 items-center gap-3 rounded-md border border-border p-3 text-left hover:border-primary hover:bg-primary/5" type="button" onClick={() => { onSelect(team); onClose(); }}>
+                <button key={team.id} className="flex min-w-0 items-center gap-3 rounded-md border border-border p-3 text-left hover:border-primary hover:bg-primary/5 disabled:opacity-50" type="button" disabled={isAdding} onClick={() => { onSelect(team); onClose(); }}>
                   <span className="flex w-20 shrink-0 items-center -space-x-2" aria-hidden="true">
                     {team.team.members.slice(0, 3).map((member, index) => <img key={`${member.species}-${index}`} className="h-9 w-9 object-contain" src={getPokemonSpriteUrl(member.species)} alt="" />)}
                   </span>
@@ -136,4 +164,18 @@ export function CalculatorTeamPicker({ open, side, library, onClose, onSelect }:
 
 function tabClass(active: boolean) {
   return `border-b-2 px-3 py-2 text-sm font-semibold ${active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`;
+}
+
+function withChampionsSuggestions(ranked: TeamSearchSuggestion[], query: string, caret: number) {
+  const { prefix, excluded } = getPokemonSuggestionContext(query, caret);
+  const prefixId = toID(prefix);
+  if (!prefixId) return ranked;
+  const seen = new Set([...ranked.map((item) => toID(item.name)), ...excluded.map(toID)]);
+  const fallback = championsSpecies
+    .filter((species) => {
+      const id = toID(species);
+      return id.startsWith(prefixId) && id !== prefixId && !seen.has(id);
+    })
+    .map((name) => ({ name, teamCount: 0 }));
+  return [...ranked, ...fallback].slice(0, 6);
 }

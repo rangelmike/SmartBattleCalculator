@@ -14,7 +14,7 @@ import {
 } from "@/lib/pokemon/battle-hp";
 import { createChampionsMember, loadChampionsPokemonRules } from "@/lib/pokemon/champions-data";
 import {
-  addPokemonToRoster, captureInitialStats, loadRoster, readCalculatorSession, removeRosterPokemon,
+  addPokemonBatchToRoster, captureInitialStats, loadRoster, readCalculatorSession, removeRosterPokemon,
   restoreInitialStats, startNewBattle, updateRosterPokemon, writeCalculatorSession, type CalculatorSession, type InitialPokemonStats
 } from "@/lib/pokemon/calculator-session";
 import { buildOpponentPreset, getMaxHp, normalizeBattlePokemonAbility, type BattleFieldState, type BattlePokemon, type BattleSide } from "@/lib/pokemon/damage-calculation";
@@ -84,16 +84,30 @@ export function CalculatorWorkspace({ profile }: { profile: AppProfile }) {
   }
 
   async function addIndividualPokemon(side: BattleSide, species: string) {
+    await addIndividualPokemonBatch(side, [species]);
+  }
+
+  async function addIndividualPokemonBatch(side: BattleSide, speciesNames: string[]) {
     setIsAdding(true);
     setError(null);
     try {
-      const rules = await loadChampionsPokemonRules(species);
-      const base = await createChampionsMember(rules.species);
-      const common = profile.isLocal ? null : await getPopularPokemonCommonSet(rules.species);
-      const member = applyIndividualSetDefault(base, rules, common, session[side].slots.map((slot) => slot.member.item));
-      const id = crypto.randomUUID();
-      setInitialStats((current) => ({ ...current, [`${side}:${id}`]: captureInitialStats(member) }));
-      setSession((current) => addPokemonToRoster(current, side, member, id));
+      const seeds = await Promise.all(speciesNames.map(async (species) => {
+        const rules = await loadChampionsPokemonRules(species);
+        const base = await createChampionsMember(rules.species);
+        const common = profile.isLocal ? null : await getPopularPokemonCommonSet(rules.species);
+        return { base, rules, common };
+      }));
+      const usedItems = session[side].slots.slice(0, 6 - speciesNames.length).map((slot) => slot.member.item);
+      const additions = seeds.map(({ base, rules, common }) => {
+        const member = applyIndividualSetDefault(base, rules, common, usedItems);
+        usedItems.push(member.item);
+        return { id: crypto.randomUUID(), member };
+      });
+      setInitialStats((current) => ({
+        ...current,
+        ...Object.fromEntries(additions.map(({ id, member }) => [`${side}:${id}`, captureInitialStats(member)]))
+      }));
+      setSession((current) => addPokemonBatchToRoster(current, side, additions));
     } finally {
       setIsAdding(false);
     }
@@ -198,6 +212,7 @@ export function CalculatorWorkspace({ profile }: { profile: AppProfile }) {
         onRemoveObservation={(id) => setSession((current) => ({ ...current, observations: current.observations.filter((observation) => observation.id !== id) }))}
         onPreset={applyPreset} onNature={changeOpponentNature}
         onToggleEstimate={(active) => setSession((current) => ({ ...current, disabledEstimates: active ? current.disabledEstimates.filter((id) => id !== selectedOpponent?.id) : [...new Set([...current.disabledEstimates, selectedOpponent?.id ?? ""])] }))}
+        onChangeBoost={(side, id, stat, stage) => setBoosts((current) => setBattleBoost(current, side, id, stat, stage))}
       />
       <div className="grid gap-6 py-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,350px)_minmax(0,1fr)]">
         <CalculatorTeamPanel
@@ -231,6 +246,7 @@ export function CalculatorWorkspace({ profile }: { profile: AppProfile }) {
       <CalculatorTeamPicker
         open={pickerSide !== null} side={pickerSide ?? "own"} library={library}
         onClose={() => setPickerSide(null)} onSelect={(team) => selectTeam(pickerSide ?? "own", team)}
+        onAddPokemon={(species) => addIndividualPokemonBatch(pickerSide ?? "own", species)} isAdding={isAdding}
       />
     </div>
   );

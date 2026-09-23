@@ -61,11 +61,22 @@ export function loadRoster(session: CalculatorSession, side: BattleSide, team: S
 }
 
 export function addPokemonToRoster(session: CalculatorSession, side: BattleSide, member: TeamMember, id?: string): CalculatorSession {
-  const added = makeBattlePokemon(member, id);
+  return addPokemonBatchToRoster(session, side, [{ member, id }]);
+}
+
+export function addPokemonBatchToRoster(
+  session: CalculatorSession, side: BattleSide, entries: { member: TeamMember; id?: string }[]
+): CalculatorSession {
+  if (entries.length === 0) return session;
+  if (entries.length > 6) throw new Error("A calculator team cannot have more than six new Pokemon at once.");
   const roster = session[side];
+  const slots = [
+    ...roster.slots.slice(0, 6 - entries.length),
+    ...entries.map(({ member, id }) => makeBattlePokemon(member, id))
+  ];
   return {
     ...session,
-    [side]: { slots: [...roster.slots.slice(0, 5), added], selectedId: added.id, teamId: null },
+    [side]: { slots, selectedId: slots.at(-1)?.id ?? null, teamId: null },
     selectedMove: session.selectedMove?.side === side ? null : session.selectedMove
   };
 }

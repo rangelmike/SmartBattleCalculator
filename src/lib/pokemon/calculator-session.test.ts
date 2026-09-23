@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addPokemonToRoster,
+  addPokemonBatchToRoster,
   captureInitialStats,
   emptyCalculatorSession,
   loadRoster,
@@ -34,6 +35,23 @@ describe("calculator session", () => {
     expect(session.own.slots[0].id).toBe("team-1:0");
     expect(session.own.slots.at(-1)?.id).toBe(session.own.selectedId);
     expect(session.own.teamId).toBeNull();
+  });
+
+  it("keeps every searched Pokemon when adding several to a full roster", () => {
+    let session = emptyCalculatorSession();
+    for (let index = 0; index < 6; index += 1) {
+      session = addPokemonToRoster(session, "opponent", member, `existing-${index}`);
+    }
+    const additions = [
+      { id: "pelipper-new", member },
+      { id: "archaludon-new", member: { ...member, name: "Archaludon", species: "Archaludon", ability: "Stamina" } }
+    ];
+    const next = addPokemonBatchToRoster(session, "opponent", additions);
+    expect(next.opponent.slots.map((slot) => slot.id)).toEqual([
+      "existing-0", "existing-1", "existing-2", "existing-3", "pelipper-new", "archaludon-new"
+    ]);
+    expect(next.opponent.selectedId).toBe("archaludon-new");
+    expect(next.opponent.teamId).toBeNull();
   });
 
   it("starts a new battle without clearing My Team", () => {
