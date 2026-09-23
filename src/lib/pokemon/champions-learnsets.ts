@@ -313,7 +313,7 @@ export const championsSpeciesRules: Record<string, ChampionsSpeciesRuleData> = {
   "absolmegaz": {
     "name": "Absol-Mega-Z",
     "abilities": [
-      "Magic Bounce"
+      "Sharpness"
     ],
     "moves": [
       "Aerial Ace",
@@ -3086,7 +3086,6 @@ export const championsSpeciesRules: Record<string, ChampionsSpeciesRuleData> = {
   "baxcaliburmega": {
     "name": "Baxcalibur-Mega",
     "abilities": [
-      "Ice Body",
       "Thermal Exchange"
     ],
     "moves": [
@@ -8668,7 +8667,7 @@ export const championsSpeciesRules: Record<string, ChampionsSpeciesRuleData> = {
   "garchompmegaz": {
     "name": "Garchomp-Mega-Z",
     "abilities": [
-      "Sand Force"
+      "Levitate"
     ],
     "moves": [
       "Aerial Ace",
@@ -9720,7 +9719,7 @@ export const championsSpeciesRules: Record<string, ChampionsSpeciesRuleData> = {
   "golisopodmega": {
     "name": "Golisopod-Mega",
     "abilities": [
-      "Emergency Exit"
+      "Tough Claws"
     ],
     "moves": [
       "Agility",
@@ -13144,7 +13143,7 @@ export const championsSpeciesRules: Record<string, ChampionsSpeciesRuleData> = {
   "lucariomegaz": {
     "name": "Lucario-Mega-Z",
     "abilities": [
-      "Adaptability"
+      "Aura Guard"
     ],
     "moves": [
       "Aerial Ace",

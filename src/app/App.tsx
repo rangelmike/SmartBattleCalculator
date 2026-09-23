@@ -3,6 +3,7 @@ import { AuthPage } from "@/features/auth/AuthPage";
 import { CalculatorPage } from "@/features/calculator/CalculatorPage";
 import { AppShell, type AppPage } from "@/features/navigation/AppShell";
 import { ProfilePage } from "@/features/teams/ProfilePage";
+import { readTheme, saveTheme, type AppTheme } from "@/lib/theme";
 import {
   getInitialProfile,
   signOutProfile,
@@ -14,6 +15,7 @@ export function App() {
   const [profile, setProfile] = useState<AppProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activePage, setActivePage] = useState<AppPage>(readPageFromHash);
+  const [theme, setTheme] = useState<AppTheme>(readTheme);
 
   useEffect(() => {
     let isMounted = true;
@@ -52,6 +54,12 @@ export function App() {
     setActivePage(page);
   }
 
+  function handleThemeToggle() {
+    const next = theme === "dark" ? "light" : "dark";
+    saveTheme(next);
+    setTheme(next);
+  }
+
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background text-foreground">
@@ -65,11 +73,11 @@ export function App() {
   }
 
   return (
-    <AppShell activePage={activePage} profile={profile} onNavigate={handleNavigate} onLogout={() => void handleLogout()}>
+    <AppShell activePage={activePage} profile={profile} theme={theme} onThemeToggle={handleThemeToggle} onNavigate={handleNavigate} onLogout={() => void handleLogout()}>
       {activePage === "profile" ? (
         <ProfilePage profile={profile} onProfileUpdated={setProfile} />
       ) : (
-        <CalculatorPage />
+        <CalculatorPage key={profile.id} profile={profile} />
       )}
     </AppShell>
   );

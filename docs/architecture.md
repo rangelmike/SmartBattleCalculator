@@ -56,6 +56,15 @@ docs/                     Architecture and operating notes
 6. Function validates JSON, stores cache, and returns it.
 7. If Gemini times out or fails, return deterministic fallback with `fallbackUsed: true`.
 
+## Calculator flow
+
+- The calculator uses `@smogon/calc` generation 0 (Champions) for level-50 damage, field modifiers, hit rolls and KO descriptions. Battle form, temporary type, current HP and critical-hit state are kept separate from the saved base set.
+- My Team reads the user's own collection; Opponent Team reads the rival collection and can search paginated popular teams. Individual Pokemon use their materialized popular set when available.
+- Calculator rosters, field conditions and recorded damage (own attacks in percent, opponent attacks in HP) are stored locally per user until New battle. A bounded candidate search scores opponent EV spreads and natures against damage dealt and received by known Pokemon; manual edits can override its result.
+- Battle stat stages are held only in calculator memory per Pokemon. They survive roster selection changes, affect `@smogon/calc` results, and are cleared on Reset stats, New battle or calculator exit; boosted observations are not persisted across exits.
+- Current HP uses the same temporary lifetime per Pokemon. Its numeric field and draggable HP bar share one in-memory value; observations made under temporary HP do not persist across calculator exits.
+- Saving from My Team writes to own and opponent collections. Saving from Opponent Team writes only to the opponent collection.
+
 ## Deployment
 
 - GitHub Pages:

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CircleHelp, Pencil, Sparkles, Sword, Trash2 } from "lucide-react";
 import { getChampionsItemIconUrl, getNatureModifiers } from "@/lib/pokemon/champions-data";
+import { getFormeDefaultAbility } from "@/lib/pokemon/damage-calculation";
 import type { SavedTeam } from "@/lib/pokemon/team-import";
 import {
   calculateLevel50Stats,
@@ -93,6 +94,7 @@ function PokemonCard({ member, isChampions }: { member: TeamMember; isChampions:
   const [showMega, setShowMega] = useState(true);
   const megaSpecies = getChampionsMegaSpecies(member);
   const displaySpecies = showMega && megaSpecies ? megaSpecies : member.species;
+  const displayAbility = showMega && megaSpecies ? getFormeDefaultAbility(megaSpecies) ?? member.ability : member.ability;
   const spriteUrl = getPokemonSpriteUrl(displaySpecies);
   const natureModifiers = getNatureModifiers(member.nature);
   let stats: Level50Stats | null = null;
@@ -142,7 +144,7 @@ function PokemonCard({ member, isChampions }: { member: TeamMember; isChampions:
           <div className="mt-2 grid gap-1 text-xs text-foreground">
             <span className="flex min-w-0 items-center gap-1.5">
               <Sparkles aria-hidden className="h-3.5 w-3.5 shrink-0 text-accent" />
-              <span className="truncate">{member.ability || "No ability"}</span>
+              <span className="truncate">{displayAbility || "No ability"}</span>
             </span>
             <span className="flex min-w-0 items-center gap-1.5">
               {member.item ? <img className="h-5 w-5 shrink-0 object-contain" src={getChampionsItemIconUrl(member.item)} alt="" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} /> : null}
@@ -181,7 +183,7 @@ function PokemonCard({ member, isChampions }: { member: TeamMember; isChampions:
           </div>
           <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
             {pokemonStatIds.map((stat) => (
-              <div key={stat} className={`border-b pb-1 ${natureModifiers.plus === stat ? "border-emerald-300 bg-emerald-50 text-emerald-700" : natureModifiers.minus === stat ? "border-red-300 bg-red-50 text-red-700" : "border-border"}`}>
+              <div key={stat} className={`border-b pb-1 ${natureModifiers.plus === stat ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/35 dark:text-emerald-300" : natureModifiers.minus === stat ? "border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/35 dark:text-red-300" : "border-border"}`}>
                 <div className="flex items-center justify-between gap-2">
                   <dt className={natureModifiers.plus === stat || natureModifiers.minus === stat ? "font-semibold" : "text-muted-foreground"}>
                     {statLabels[stat]} {natureModifiers.plus === stat ? "↑" : natureModifiers.minus === stat ? "↓" : ""}

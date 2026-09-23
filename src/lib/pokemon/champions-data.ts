@@ -1,6 +1,6 @@
 import { Generations, toID } from "@smogon/calc";
 import { championsSpeciesRules } from "@/lib/pokemon/champions-learnsets";
-import type { PokemonNature, PokemonTeam, TeamMember } from "@/lib/pokemon/types";
+import type { PokemonNature, PokemonStatId, PokemonTeam, TeamMember } from "@/lib/pokemon/types";
 
 const champions = Generations.get(0);
 
@@ -15,6 +15,29 @@ export const championsItems = [...champions.items]
 export const championsNatures = [...champions.natures]
   .map((nature) => nature.name)
   .sort((left, right) => left.localeCompare(right, "en"));
+
+export const natureStatIds = ["atk", "def", "spa", "spd", "spe"] as const;
+export type NatureStatId = (typeof natureStatIds)[number];
+
+const natureStatLabels: Record<NatureStatId, string> = {
+  atk: "Atk", def: "Def", spa: "SpA", spd: "SpD", spe: "Spe"
+};
+
+export function getNatureStatPair(nature: PokemonNature | undefined): { plus: NatureStatId; minus: NatureStatId } {
+  const data = champions.natures.get(toID(nature ?? "Serious"));
+  return { plus: data?.plus as NatureStatId ?? "spe", minus: data?.minus as NatureStatId ?? "spe" };
+}
+
+export function getNatureForStats(plus: PokemonStatId, minus: PokemonStatId): PokemonNature | null {
+  if (plus === "hp" || minus === "hp") return null;
+  const nature = [...champions.natures].find((candidate) => candidate.plus === plus && candidate.minus === minus);
+  return nature?.name ?? null;
+}
+
+export function getNatureOptionLabel(nature: PokemonNature): string {
+  const { plus, minus } = getNatureStatPair(nature);
+  return `${nature} (+${natureStatLabels[plus]} / -${natureStatLabels[minus]})`;
+}
 
 export type ChampionsPokemonRules = {
   species: string;
@@ -37,6 +60,15 @@ export function isChampionsItem(value: string) {
 
 export function isChampionsNature(value: string | undefined): value is PokemonNature {
   return Boolean(value && champions.natures.get(toID(value)));
+}
+
+export function getChampionsFormeAbility(forme: string) {
+  const id = toID(forme);
+  return championsSpeciesRules[id]?.abilities[0] ?? champions.species.get(id)?.abilities?.[0];
+}
+
+export function getChampionsFormeAbilities(forme: string) {
+  return championsSpeciesRules[toID(forme)]?.abilities;
 }
 
 export function loadChampionsPokemonRules(speciesName: string): Promise<ChampionsPokemonRules> {

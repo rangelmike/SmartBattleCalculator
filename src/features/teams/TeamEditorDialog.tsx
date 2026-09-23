@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { AlertCircle, Plus, Save, Trash2, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, GripVertical, Plus, Save, Trash2, X } from "lucide-react";
 import {
   championsItems,
   championsNatures,
@@ -8,12 +8,17 @@ import {
   createChampionsMember,
   getChampionsItemIconUrl,
   getNatureModifiers,
+  getNatureForStats,
+  getNatureOptionLabel,
+  getNatureStatPair,
   loadChampionsPokemonRules,
+  natureStatIds,
   validateChampionsTeam,
   type ChampionsPokemonRules
 } from "@/lib/pokemon/champions-data";
 import type { SavedTeam, TeamListKind } from "@/lib/pokemon/team-import";
 import { getPokemonSpriteUrl, pokemonStatIds } from "@/lib/pokemon/team-stats";
+import { moveTeamMember, movedSelectedIndex } from "@/lib/pokemon/team-order";
 import type { PokemonStatId, PokemonTeam, TeamMember } from "@/lib/pokemon/types";
 
 const newSourceValue = "__new_source__";
@@ -60,6 +65,7 @@ export function TeamEditorDialog({
   const [destination, setDestination] = useState<TeamEditorDestination>(defaultDestination);
   const [team, setTeam] = useState<PokemonTeam>({ format: "champions", members: [] });
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -74,6 +80,7 @@ export function TeamEditorDialog({
     setDestination(defaultDestination);
     setTeam(initialTeam ? cloneTeam(initialTeam.team) : { format: "champions", members: [] });
     setSelectedIndex(0);
+    setDraggedIndex(null);
     setSubmitError(null);
   }, [defaultDestination, initialTeam, open, sources]);
 
@@ -113,6 +120,13 @@ export function TeamEditorDialog({
   function removeMember(index: number) {
     setTeam((current) => ({ ...current, members: current.members.filter((_, memberIndex) => memberIndex !== index) }));
     setSelectedIndex((current) => Math.max(0, Math.min(current, team.members.length - 2)));
+  }
+
+  function reorder(from: number, to: number) {
+    if (from === to || from < 0 || to < 0 || from >= team.members.length || to >= team.members.length) return;
+    setTeam((current) => ({ ...current, members: moveTeamMember(current.members, from, to) }));
+    setSelectedIndex((current) => movedSelectedIndex(current, from, to));
+    setDraggedIndex(null);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -197,15 +211,20 @@ export function TeamEditorDialog({
                     <h3 className="text-base font-semibold">Team members</h3>
                     <p className="text-sm text-muted-foreground">{team.members.length}/6 Pokemon selected</p>
                   </div>
-                  <button className="flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold hover:bg-secondary disabled:opacity-50" type="button" onClick={() => void addMember()} disabled={team.members.length >= 6}>
-                    <Plus aria-hidden className="h-4 w-4" /> Add Pokemon
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button className="flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-secondary disabled:opacity-40" type="button" disabled={selectedIndex <= 0 || !selectedMember} onClick={() => reorder(selectedIndex, selectedIndex - 1)} title="Move selected Pokemon left" aria-label="Move selected Pokemon left"><ArrowLeft className="h-4 w-4" /></button>
+                    <button className="flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-secondary disabled:opacity-40" type="button" disabled={!selectedMember || selectedIndex >= team.members.length - 1} onClick={() => reorder(selectedIndex, selectedIndex + 1)} title="Move selected Pokemon right" aria-label="Move selected Pokemon right"><ArrowRight className="h-4 w-4" /></button>
+                    <button className="flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold hover:bg-secondary disabled:opacity-50" type="button" onClick={() => void addMember()} disabled={team.members.length >= 6}>
+                      <Plus aria-hidden className="h-4 w-4" /> Add Pokemon
+                    </button>
+                  </div>
                 </div>
 
                 {team.members.length ? (
                   <div className="mt-4 flex gap-2 overflow-x-auto pb-2" role="tablist" aria-label="Team members">
                     {team.members.map((member, index) => (
-                      <button key={`${member.species}-${index}`} className={`flex h-16 min-w-32 items-center gap-2 rounded-md border px-2 text-left ${selectedIndex === index ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:bg-secondary"}`} type="button" onClick={() => setSelectedIndex(index)} role="tab" aria-selected={selectedIndex === index}>
+                      <button key={`${member.species}-${index}`} className={`flex h-16 min-w-32 items-center gap-2 rounded-md border px-2 text-left ${draggedIndex === index ? "opacity-50" : ""} ${selectedIndex === index ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:bg-secondary"}`} type="button" onClick={() => setSelectedIndex(index)} role="tab" aria-selected={selectedIndex === index} draggable onDragStart={(event) => { setDraggedIndex(index); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", String(index)); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => { event.preventDefault(); const from = Number(event.dataTransfer.getData("text/plain")); if (Number.isInteger(from)) reorder(from, index); }} onDragEnd={() => setDraggedIndex(null)}>
+                        <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                         <img className="h-11 w-11 shrink-0 object-contain" src={getPokemonSpriteUrl(member.species)} alt="" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
                         <span className="min-w-0 truncate text-xs font-semibold">{member.species}</span>
                       </button>
@@ -256,6 +275,7 @@ function PokemonEditor({ member, onChange, onRemove }: { member: TeamMember; onC
   const [rules, setRules] = useState<ChampionsPokemonRules | null>(null);
   const [isChangingSpecies, setIsChangingSpecies] = useState(false);
   const natureModifiers = getNatureModifiers(member.nature);
+  const natureStats = getNatureStatPair(member.nature);
   const evTotal = useMemo(() => Object.values(member.evs).reduce((total, value) => total + (value ?? 0), 0), [member.evs]);
 
   useEffect(() => {
@@ -284,6 +304,11 @@ function PokemonEditor({ member, onChange, onRemove }: { member: TeamMember; onC
   function changeEv(stat: PokemonStatId, value: string) {
     const nextValue = Math.max(0, Math.min(32, Number(value) || 0));
     onChange({ ...member, evs: { ...member.evs, [stat]: nextValue } });
+  }
+
+  function changeNatureStat(direction: "plus" | "minus", stat: PokemonStatId) {
+    const nature = getNatureForStats(direction === "plus" ? stat : natureStats.plus, direction === "minus" ? stat : natureStats.minus);
+    if (nature) onChange({ ...member, nature });
   }
 
   return (
@@ -326,7 +351,7 @@ function PokemonEditor({ member, onChange, onRemove }: { member: TeamMember; onC
         </EditorField>
         <EditorField label="Nature">
           <select className={inputClassName} value={member.nature ?? "Serious"} onChange={(event) => onChange({ ...member, nature: event.target.value as TeamMember["nature"] })}>
-            {championsNatures.map((nature) => <option key={nature} value={nature}>{nature}</option>)}
+            {championsNatures.map((nature) => <option key={nature} value={nature}>{getNatureOptionLabel(nature)}</option>)}
           </select>
         </EditorField>
         {Array.from({ length: 4 }, (_, index) => (
@@ -344,9 +369,21 @@ function PokemonEditor({ member, onChange, onRemove }: { member: TeamMember; onC
           <h4 className="text-sm font-semibold">EV distribution</h4>
           <span className={`text-sm font-semibold tabular-nums ${evTotal > 66 ? "text-destructive" : "text-muted-foreground"}`}>{evTotal}/66</span>
         </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <EditorField label="Nature raises" labelClassName="text-emerald-700 dark:text-emerald-300">
+            <select className={inputClassName} value={natureStats.plus} onChange={(event) => changeNatureStat("plus", event.target.value as PokemonStatId)}>
+              {natureStatIds.map((stat) => <option key={stat} value={stat}>{statLabels[stat]}</option>)}
+            </select>
+          </EditorField>
+          <EditorField label="Nature lowers" labelClassName="text-red-700 dark:text-red-300">
+            <select className={inputClassName} value={natureStats.minus} onChange={(event) => changeNatureStat("minus", event.target.value as PokemonStatId)}>
+              {natureStatIds.map((stat) => <option key={stat} value={stat}>{statLabels[stat]}</option>)}
+            </select>
+          </EditorField>
+        </div>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {pokemonStatIds.map((stat) => (
-            <EditorField key={stat} label={statLabels[stat]} labelClassName={natureModifiers.plus === stat ? "text-emerald-600" : natureModifiers.minus === stat ? "text-red-600" : ""}>
+            <EditorField key={stat} label={statLabels[stat]} labelClassName={natureModifiers.plus === stat ? "text-emerald-600 dark:text-emerald-300" : natureModifiers.minus === stat ? "text-red-600 dark:text-red-300" : ""}>
               <input className={`${inputClassName} tabular-nums`} type="number" min={0} max={32} step={1} value={member.evs[stat] ?? 0} onChange={(event) => changeEv(stat, event.target.value)} />
             </EditorField>
           ))}

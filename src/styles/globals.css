@@ -4,6 +4,29 @@
 
 @layer base {
   :root {
+    color-scheme: dark;
+    --background: 210 9% 10%;
+    --foreground: 45 16% 94%;
+    --card: 210 9% 14%;
+    --card-foreground: 45 16% 94%;
+    --primary: 160 64% 56%;
+    --primary-foreground: 160 40% 9%;
+    --secondary: 205 9% 21%;
+    --secondary-foreground: 45 12% 93%;
+    --muted: 210 8% 18%;
+    --muted-foreground: 45 8% 70%;
+    --accent: 32 88% 64%;
+    --accent-foreground: 25 25% 10%;
+    --destructive: 0 78% 66%;
+    --destructive-foreground: 0 25% 10%;
+    --border: 205 9% 29%;
+    --input: 205 9% 34%;
+    --ring: 160 64% 56%;
+    --radius: 0.5rem;
+  }
+
+  :root.light {
+    color-scheme: light;
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -21,7 +44,6 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 217.2 91.2% 59.8%;
-    --radius: 0.5rem;
   }
 
   * {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseShowdownPaste } from "@/lib/pokemon/showdown-parser";
 import {
   createChampionsMember,
+  getChampionsFormeAbility,
   getChampionsItemIconUrl,
   loadChampionsPokemonRules,
   validateChampionsTeam
@@ -18,6 +19,19 @@ Calm Nature
 - Light Screen`;
 
 describe("Pokemon Champions legality", () => {
+  it.each([
+    ["Golisopod-Mega", "Tough Claws"],
+    ["Lucario-Mega-Z", "Aura Guard"],
+    ["Absol-Mega-Z", "Sharpness"],
+    ["Garchomp-Mega-Z", "Levitate"],
+    ["Baxcalibur-Mega", "Thermal Exchange"],
+    ["Hawlucha-Mega", "No Guard"],
+    ["Skarmory-Mega", "Stalwart"]
+  ])("uses the Champions ability for %s", async (forme, ability) => {
+    expect((await loadChampionsPokemonRules(forme)).abilities).toEqual([ability]);
+    expect(getChampionsFormeAbility(forme)).toBe(ability);
+  });
+
   it("loads abilities and learned moves for a Champions Pokemon", async () => {
     const rules = await loadChampionsPokemonRules("Grimmsnarl");
     expect(rules.abilities).toContain("Prankster");

@@ -37,8 +37,10 @@ describe("team viewer", () => {
     expect(screen.getByRole("img", { name: "Swampert-Mega" })).toHaveAttribute(
       "src", "https://play.pokemonshowdown.com/sprites/ani/swampert-mega.gif"
     );
+    expect(screen.getByText("Swift Swim")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Normal" }));
     expect(screen.getByText("Base 110")).toBeVisible();
+    expect(screen.getByText("Damp")).toBeVisible();
   });
 
   it("keeps the form switch for older teams saved with a VGC format", () => {
@@ -66,5 +68,16 @@ describe("team viewer", () => {
     expect(screen.getByRole("img", { name: megaSpecies })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Normal" }));
     expect(screen.getByRole("img", { name: species })).toBeVisible();
+  });
+
+  it.each([
+    ["Lucario", "Lucarionite Z", "Inner Focus", "Aura Guard"],
+    ["Absol", "Absolite Z", "Super Luck", "Sharpness"]
+  ])("shows %s's Z Mega ability only in Mega form", (species, item, baseAbility, megaAbility) => {
+    const member = { ...team.team.members[0], name: species, species, item, ability: baseAbility };
+    render(<TeamViewer team={{ ...team, team: { ...team.team, members: [member] } }} />);
+    expect(screen.getByText(megaAbility)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Normal" }));
+    expect(screen.getByText(baseAbility)).toBeVisible();
   });
 });

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { Calculator, LogOut, UserRound } from "lucide-react";
+import { Calculator, LogOut, Moon, Sun, UserRound } from "lucide-react";
 import type { AppProfile } from "@/lib/supabase/auth";
+import type { AppTheme } from "@/lib/theme";
 
 export type AppPage = "calculator" | "profile";
 
@@ -8,11 +9,13 @@ type AppShellProps = {
   activePage: AppPage;
   children: ReactNode;
   profile: AppProfile;
+  theme: AppTheme;
+  onThemeToggle: () => void;
   onNavigate: (page: AppPage) => void;
   onLogout: () => void;
 };
 
-export function AppShell({ activePage, children, profile, onNavigate, onLogout }: AppShellProps) {
+export function AppShell({ activePage, children, profile, theme, onThemeToggle, onNavigate, onLogout }: AppShellProps) {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">
@@ -34,7 +37,17 @@ export function AppShell({ activePage, children, profile, onNavigate, onLogout }
           </nav>
 
           <div className="flex items-center gap-2">
-            <span className="hidden max-w-40 truncate text-sm font-medium text-muted-foreground md:block">
+            <button
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border transition hover:bg-secondary"
+              type="button"
+              onClick={onThemeToggle}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-pressed={theme === "dark"}
+            >
+              {theme === "dark" ? <Sun aria-hidden className="h-4 w-4" /> : <Moon aria-hidden className="h-4 w-4" />}
+            </button>
+            <span className="max-w-20 truncate text-sm font-medium text-muted-foreground sm:max-w-40">
               {profile.username}
             </span>
             <button
