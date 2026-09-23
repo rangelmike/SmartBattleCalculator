@@ -12,6 +12,7 @@ import {
   makeBattlePokemon
 } from "@/lib/pokemon/damage-calculation";
 import { calculateLevel50Stats } from "@/lib/pokemon/team-stats";
+import { recoveryAwareKoChance } from "@/lib/pokemon/hp-effects";
 import type { TeamMember } from "@/lib/pokemon/types";
 
 const pelipper: TeamMember = {
@@ -65,9 +66,103 @@ describe("Champions damage calculation", () => {
   });
 
   it("still reports hits to KO for very weak moves", () => {
-    const result = calculateDamage(makeBattlePokemon(pelipper), makeBattlePokemon(archaludon), "Acrobatics", "own", defaultBattleField());
+    const result = calculateDamage(makeBattlePokemon(pelipper), makeBattlePokemon({ ...archaludon, item: "" }), "Acrobatics", "own", defaultBattleField());
     expect(result?.koChance).toContain("hits to KO");
     expect(result?.description).toContain(" -- ");
+  });
+
+  it("does not claim a finite KO when passive healing offsets a weak attack", () => {
+    const result = calculateDamage(makeBattlePokemon(pelipper), makeBattlePokemon(archaludon), "Acrobatics", "own", defaultBattleField());
+    expect(result?.koChance).toContain("no KO within 30 hits after Leftovers recovery");
+  });
+
+  it("shows damage-based recoil and draining as percentages of the user's HP", () => {
+    const attacker = makeBattlePokemon({ ...pelipper, moves: ["Wave Crash", "Giga Drain"], item: "" });
+    const defender = makeBattlePokemon({ ...archaludon, item: "" });
+    const field = defaultBattleField();
+    const recoil = calculateDamage(attacker, defender, "Wave Crash", "own", field)!;
+    const drain = calculateDamage(attacker, defender, "Giga Drain", "own", field)!;
+    expect(recoil.recoil?.minPercent).toBeGreaterThan(0);
+    expect(recoil.recoil?.maxPercent).toBeGreaterThanOrEqual(recoil.recoil!.minPercent);
+    expect(recoil.healing).toBeUndefined();
+    expect(drain.healing?.minPercent).toBeGreaterThan(0);
+    expect(drain.recoil).toBeUndefined();
+  });
+
+  it("shows self-healing moves, including weather and delayed healing, without attributing Heal Pulse to the user", () => {
+    const attacker = makeBattlePokemon({ ...pelipper, moves: ["Recover", "Synthesis", "Wish", "Heal Pulse"] });
+    const defender = makeBattlePokemon(archaludon);
+    const field = defaultBattleField();
+    expect(calculateDamage(attacker, defender, "Recover", "own", field)?.healing?.minPercent).toBeGreaterThan(49);
+    expect(calculateDamage(attacker, defender, "Roost", "own", field)?.healing?.minPercent).toBeGreaterThan(49);
+    expect(calculateDamage(attacker, defender, "Life Dew", "own", field)?.healing?.minPercent).toBeGreaterThan(24);
+    expect(calculateDamage(attacker, defender, "Rest", "own", field)?.healing?.minPercent).toBe(100);
+    expect(calculateDamage(attacker, defender, "Wish", "own", field)?.healing?.timing).toBe("next turn");
+    expect(calculateDamage(attacker, defender, "Heal Pulse", "own", field)?.healing).toBeUndefined();
+    const clear = calculateDamage(attacker, defender, "Synthesis", "own", field)!.healing!.minPercent;
+    field.weather = "Rain";
+    const rainy = calculateDamage(attacker, defender, "Synthesis", "own", field)!.healing!.minPercent;
+    field.weather = "Sun";
+    const sunny = calculateDamage(attacker, defender, "Synthesis", "own", field)!.healing!.minPercent;
+    expect(rainy).toBeLessThan(clear);
+    expect(sunny).toBeGreaterThan(clear);
+  });
+
+  it("handles fixed HP cost and Strength Sap's target-dependent recovery", () => {
+    const attacker = makeBattlePokemon({ ...pelipper, item: "" });
+    const defender = makeBattlePokemon({ ...archaludon, item: "" });
+    const field = defaultBattleField();
+    expect(calculateDamage(attacker, defender, "Steel Beam", "own", field)?.recoil).toEqual({ minPercent: 50, maxPercent: 50 });
+    const unboosted = calculateDamage(attacker, defender, "Strength Sap", "own", field)?.healing?.minPercent;
+    const boosted = calculateDamage(attacker, { ...defender, boosts: { atk: 2 } }, "Strength Sap", "own", field)?.healing?.minPercent;
+    expect(unboosted).toBeGreaterThan(0);
+    expect(boosted).toBeGreaterThanOrEqual(unboosted!);
+  });
+
+  it("includes one-use Sitrus Berry and passive recovery in hits-to-KO projections", () => {
+    const attacker = makeBattlePokemon({ ...pelipper, item: "" });
+    const base = makeBattlePokemon({ ...archaludon, item: "", ability: "Stamina" });
+    const defender = { ...base, currentHp: 100 };
+    const field = defaultBattleField();
+    const plain = calculateDamage(attacker, defender, "Hurricane", "own", field)!;
+    const sitrus = calculateDamage(attacker, { ...defender, member: { ...defender.member, item: "Sitrus Berry" } }, "Hurricane", "own", field)!;
+    const leftovers = calculateDamage(attacker, { ...defender, member: { ...defender.member, item: "Leftovers" } }, "Hurricane", "own", field)!;
+    expect(plain.koChance).toContain("HKO");
+    expect(sitrus.koChance).toContain("Sitrus Berry recovery");
+    expect(leftovers.koChance).toContain("Leftovers recovery");
+    expect(Number(sitrus.koChance.match(/(\d+)HKO/)?.[1])).toBeGreaterThan(Number(plain.koChance.match(/(\d+)HKO/)?.[1]));
+    expect(sitrus.description).toContain(sitrus.koChance);
+  });
+
+  it("consumes Sitrus Berry only once and combines independent recovery sources", () => {
+    const gen = Generations.get(0);
+    const attacker = new Pokemon(gen, "Pelipper", { level: 50 });
+    const defender = new Pokemon(gen, "Archaludon", {
+      level: 50, ability: "Rain Dish", item: "Sitrus Berry", curHP: 100
+    });
+    const move = new Move(gen, "Hurricane");
+    const field = defaultBattleField();
+    expect(recoveryAwareKoChance([40], attacker, defender, move, field, field.opponent))
+      .toBe("guaranteed 4HKO after Sitrus Berry recovery");
+
+    field.weather = "Rain";
+    field.terrain = "Grassy";
+    const combined = recoveryAwareKoChance([40], attacker, defender, move, field, field.opponent);
+    expect(combined).toContain("Sitrus Berry + Rain Dish + Grassy Terrain recovery");
+    expect(Number(combined?.match(/(\d+)HKO/)?.[1])).toBeGreaterThan(4);
+  });
+
+  it("applies Grassy Terrain only while grounded and Rain Dish only in rain", () => {
+    const attacker = makeBattlePokemon({ ...pelipper, item: "" });
+    const groundDefender = makeBattlePokemon({ ...archaludon, item: "", ability: "Rain Dish" });
+    const flyingDefender = makeBattlePokemon({ ...pelipper, item: "", ability: "Drizzle" });
+    const field = defaultBattleField();
+    field.terrain = "Grassy";
+    expect(calculateDamage(attacker, groundDefender, "Hurricane", "own", field)?.koChance).toContain("Grassy Terrain recovery");
+    expect(calculateDamage(attacker, flyingDefender, "Hurricane", "own", field)?.koChance).not.toContain("Grassy Terrain recovery");
+    field.terrain = "";
+    field.weather = "Rain";
+    expect(calculateDamage(attacker, groundDefender, "Hurricane", "own", field)?.koChance).toContain("Rain Dish recovery");
   });
 
   it("changes the default Mega form and its real stats", () => {

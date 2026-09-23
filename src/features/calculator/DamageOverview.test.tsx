@@ -37,4 +37,15 @@ describe("recorded damage units", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Opponent Spe stage near sprite" }), { target: { value: "-2" } });
     expect(onChangeBoost).toHaveBeenCalledWith("opponent", opponent.id, "spe", -2);
   });
+
+  it("places recoil and healing percentages beside each move's damage", () => {
+    const own = makeBattlePokemon({ name: "Pelipper", species: "Pelipper", level: 50, ability: "Drizzle", item: "", nature: "Modest", evs: {}, ivs: {}, moves: ["Wave Crash", "Giga Drain", "Recover", "Wish"] });
+    const opponent = makeBattlePokemon({ name: "Archaludon", species: "Archaludon", level: 50, ability: "Stamina", item: "", nature: "Modest", evs: {}, ivs: {}, moves: ["Protect"] });
+    render(<DamageOverview own={own} opponent={opponent} field={defaultBattleField()} selectedMove={null} observations={[]} estimate={null} usingEstimate={false}
+      onSelectMove={vi.fn()} onRecord={vi.fn()} onRemoveObservation={vi.fn()} onPreset={vi.fn()} onNature={vi.fn()} onToggleEstimate={vi.fn()} onChangeBoost={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /^Wave Crash/ })).toHaveTextContent(/Recoil -[\d.]+/);
+    expect(screen.getByRole("button", { name: /^Giga Drain/ })).toHaveTextContent(/Heal \+[\d.]+/);
+    expect(screen.getByRole("button", { name: /^Recover/ })).toHaveTextContent(/Heal \+[\d.]+/);
+    expect(screen.getByRole("button", { name: /^Wish/ })).toHaveTextContent(/Next turn \+[\d.]+/);
+  });
 });

@@ -1,5 +1,6 @@
 import { calculate, Field, Generations, Move, Pokemon, toID } from "@smogon/calc";
 import { getChampionsFormeAbilities, getChampionsFormeAbility, getNatureForStats } from "@/lib/pokemon/champions-data";
+import { getEndTurnHpEffect, getMoveHpEffects, recoveryAwareKoChance, type MoveHpEffect } from "@/lib/pokemon/hp-effects";
 import { getChampionsMegaSpecies } from "@/lib/pokemon/team-stats";
 import type { PokemonNature, PokemonSpread, PokemonStatId, TeamMember } from "@/lib/pokemon/types";
 
@@ -59,6 +60,8 @@ export type DamageCalculation = {
   rolls: number[];
   description: string;
   koChance: string;
+  healing?: MoveHpEffect;
+  recoil?: MoveHpEffect;
 };
 
 export function emptyFieldSide(): FieldSideState {
@@ -164,26 +167,31 @@ export function calculateDamage(
   const result = calculate(champions, attackingPokemon, defendingPokemon, move, field);
   const [min, max] = result.range();
   const maxHp = defendingPokemon.maxHP();
+  const details = options.details !== false;
+  const hpEffects = details ? getMoveHpEffects(result, fieldState) : {};
   if (max === 0) {
-    const reason = field.defenderSide.isProtected ? "blocked by Protect" : "no damage";
+    const reason = move.category !== "Status" && field.defenderSide.isProtected ? "blocked by Protect" : "no damage";
     return {
       min: 0, max: 0, minPercent: 0, maxPercent: 0,
       rolls: [0],
       description: `${attacker.forme} ${moveName} vs. ${defender.forme}: 0 damage (0%) -- ${reason}`,
-      koChance: "No KO"
+      koChance: "No KO",
+      ...hpEffects
     };
   }
-  const details = options.details !== false;
   const nativeKo = details ? result.kochance().text : "";
-  const koChance = details ? nativeKo || approximateHitsToKo(defendingPokemon.curHP(), min, max) : "";
+  const projectedKo = details ? recoveryAwareKoChance(damageRolls(result.damage), attackingPokemon, defendingPokemon, move, fieldState, fieldState[attackerSide === "own" ? "opponent" : "own"]) : null;
+  const koChance = details ? projectedKo ?? (nativeKo || approximateHitsToKo(defendingPokemon.curHP(), min, max)) : "";
   const description = details ? result.fullDesc() : "";
+  const baseDescription = projectedKo ? description.split(" -- ")[0] : description;
   return {
     min, max,
     minPercent: roundPercent(min, maxHp),
     maxPercent: roundPercent(max, maxHp),
     rolls: damageRolls(result.damage),
-    description: details && !nativeKo && !description.includes(" -- ") ? `${description} -- ${koChance}` : description,
-    koChance
+    description: details && (projectedKo || !nativeKo && !description.includes(" -- ")) ? `${baseDescription} -- ${koChance}` : description,
+    koChance,
+    ...hpEffects
   };
 }
 
@@ -238,16 +246,8 @@ export function buildOpponentPreset(
   return { evs, nature: mixed ? getNatureForStats(hasLargeOffenseGap ? strongerOffense : offense, mixedDrop)! : droppedNatureStat === "spa" ? "Adamant" : "Modest" };
 }
 
-export function getEndTurnHpChange(pokemon: BattlePokemon, side: FieldSideState) {
-  const hp = getMaxHp(pokemon);
-  let change = 0;
-  if (side.leechSeed) change -= Math.floor(hp / 8);
-  if (side.saltCure) change -= Math.floor(hp / ((pokemon.typeOverride ?? getPokemonTypes(pokemon.forme)).some((type) => type === "Water" || type === "Steel") ? 4 : 8));
-  if (side.curse) change -= Math.floor(hp / 4);
-  if (side.binding) change -= Math.floor(hp / 8);
-  if (side.ingrain) change += Math.floor(hp / 16);
-  if (side.aquaRing) change += Math.floor(hp / 16);
-  return change;
+export function getEndTurnHpChange(pokemon: BattlePokemon, side: FieldSideState, field: BattleFieldState) {
+  return getEndTurnHpEffect(toCalcPokemon(pokemon), side, field).change;
 }
 
 function toCalcPokemon(pokemon: BattlePokemon) {

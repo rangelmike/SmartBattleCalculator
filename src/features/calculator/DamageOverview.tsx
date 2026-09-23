@@ -123,7 +123,7 @@ export function DamageOverview({ own, opponent, field, selectedMove, observation
             </div>
             {(["own", "opponent"] as const).map((side) => {
               const pokemon = side === "own" ? own : opponent;
-              const change = getEndTurnHpChange(pokemon, field[side]);
+              const change = getEndTurnHpChange(pokemon, field[side], field);
               return change !== 0 ? <p key={side} className="mt-2 text-xs text-muted-foreground">{side === "own" ? "My Team" : "Opponent"} end-turn HP: {change > 0 ? "+" : ""}{change}</p> : null;
             })}
           </>
@@ -168,7 +168,11 @@ function MoveResults({ title, side, pokemon, results, selection, inputs, onInput
         return <div key={index} className={`grid min-h-14 grid-cols-[minmax(0,1fr)_5rem] items-center gap-2 rounded-md border px-2 py-1.5 ${move && selection?.side === side && selection.move === move ? "border-primary bg-primary/5" : "border-border"}`}>
           <button className="min-w-0 text-left" type="button" disabled={!move} onClick={() => move && onSelect({ side, move })}>
             <span className="block truncate text-sm font-semibold">{move ?? "—"}</span>
-            <span className="block text-xs tabular-nums text-muted-foreground">{result ? `${result.minPercent}–${result.maxPercent}%` : "—"}</span>
+            <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs tabular-nums text-muted-foreground">
+              <span>{result ? `${result.minPercent}–${result.maxPercent}%` : "—"}</span>
+              {result?.recoil ? <span className="text-red-700 dark:text-red-300">Recoil -{hpEffectRange(result.recoil)}%</span> : null}
+              {result?.healing ? <span className="text-emerald-700 dark:text-emerald-300">{result.healing.timing === "next turn" ? "Next turn" : "Heal"} +{hpEffectRange(result.healing)}%</span> : null}
+            </span>
           </button>
           <div className="flex min-w-0 items-center gap-1">
             <input className="h-8 w-full min-w-0 rounded border border-input bg-background px-1 text-center text-xs tabular-nums" type="number" min={0} max={side === "own" ? 100 : 999} step={side === "own" ? 0.1 : 1} value={inputs[key] ?? ""} onChange={(event) => onInput(key, event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && move) onRecord(side, move); }} disabled={!move} placeholder={side === "own" ? "%" : "HP"} aria-label={`${side === "own" ? "My Team" : "Opponent"} ${move ?? `move ${index + 1}`} observed damage (${side === "own" ? "%" : "HP"})`} />
@@ -212,6 +216,10 @@ function StageControls({ side, pokemon, onChange }: {
 
 function safeCalculate(attacker: BattlePokemon, defender: BattlePokemon, move: string, side: BattleSide, field: BattleFieldState) {
   try { return calculateDamage(attacker, defender, move, side, field); } catch { return null; }
+}
+
+function hpEffectRange(effect: { minPercent: number; maxPercent: number }) {
+  return effect.minPercent === effect.maxPercent ? String(effect.minPercent) : `${effect.minPercent}–${effect.maxPercent}`;
 }
 
 function choiceClass(active: boolean) {
