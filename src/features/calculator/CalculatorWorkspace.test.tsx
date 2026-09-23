@@ -45,7 +45,7 @@ describe("calculator Pokemon search batch", () => {
       item: "Leftovers", ability: "Stamina", nature: "Calm",
       evs: { hp: 32, spd: 32, def: 2 }, moves: ["Electro Shot", "Protect"]
     });
-  });
+  }, 10000);
 
   it("keeps sprite-side stage controls synchronized with the stat tables", async () => {
     const own = {

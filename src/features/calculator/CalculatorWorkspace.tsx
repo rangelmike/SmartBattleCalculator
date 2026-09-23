@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { CalculatorFieldPanel } from "@/features/calculator/CalculatorFieldPanel";
+import { CalculatorPanelCarousel } from "@/features/calculator/CalculatorPanelCarousel";
 import { CalculatorTeamPanel } from "@/features/calculator/CalculatorTeamPanel";
 import { CalculatorTeamPicker } from "@/features/calculator/CalculatorTeamPicker";
 import { DamageOverview } from "@/features/calculator/DamageOverview";
@@ -214,7 +215,7 @@ export function CalculatorWorkspace({ profile }: { profile: AppProfile }) {
         onToggleEstimate={(active) => setSession((current) => ({ ...current, disabledEstimates: active ? current.disabledEstimates.filter((id) => id !== selectedOpponent?.id) : [...new Set([...current.disabledEstimates, selectedOpponent?.id ?? ""])] }))}
         onChangeBoost={(side, id, stat, stage) => setBoosts((current) => setBattleBoost(current, side, id, stat, stage))}
       />
-      <div className="grid gap-6 py-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,350px)_minmax(0,1fr)]">
+      <CalculatorPanelCarousel>
         <CalculatorTeamPanel
           side="own" roster={session.own} selected={ownForBattle} isAdding={isAdding}
           onOpenTeamPicker={() => setPickerSide("own")}
@@ -242,7 +243,7 @@ export function CalculatorWorkspace({ profile }: { profile: AppProfile }) {
           onRemovePokemon={(id) => removePokemon("opponent", id)}
           onSave={(name, source) => saveRoster("opponent", name, source)}
         />
-      </div>
+      </CalculatorPanelCarousel>
       <CalculatorTeamPicker
         open={pickerSide !== null} side={pickerSide ?? "own"} library={library}
         onClose={() => setPickerSide(null)} onSelect={(team) => selectTeam(pickerSide ?? "own", team)}
