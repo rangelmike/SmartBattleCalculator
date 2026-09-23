@@ -10,6 +10,7 @@ import type { Json } from "@/lib/supabase/database.types";
 import { supabase } from "@/lib/supabase/client";
 
 const localLibraryKeyPrefix = "sbc.team-library.";
+const teamPageSize = 200;
 
 type RemoteTeamRow = {
   id: string;
@@ -29,27 +30,35 @@ export async function loadTeamLibrary(userId: string): Promise<TeamLibrary> {
     return readLocalLibrary(userId);
   }
 
-  const { data, error } = await supabase
-    .from("teams")
-    .select("id,user_id,name,source,paste_url,paste_text,team_json,team_hash,created_at,updated_at")
-    .eq("user_id", userId)
-    .order("updated_at", { ascending: false });
-
-  if (error) {
-    throw error;
+  const teamRows: RemoteTeamRow[] = [];
+  for (let offset = 0; ; offset += teamPageSize) {
+    const { data, error } = await supabase
+      .from("teams")
+      .select("id,user_id,name,source,paste_url,paste_text,team_json,team_hash,created_at,updated_at")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(offset, offset + teamPageSize - 1);
+    if (error) throw error;
+    const page = (data ?? []) as RemoteTeamRow[];
+    teamRows.push(...page);
+    if (page.length < teamPageSize) break;
   }
-
-  const teams = ((data ?? []) as RemoteTeamRow[]).map(rowToSavedTeam);
-  const { data: collectionData, error: collectionError } = await supabase
-    .from("team_collections")
-    .select("team_id,list_kind")
-    .eq("user_id", userId);
-
-  if (collectionError) {
-    throw collectionError;
+  const teams = teamRows.map(rowToSavedTeam);
+  const collections: { team_id: string; list_kind: TeamListKind }[] = [];
+  for (let offset = 0; ; offset += teamPageSize) {
+    const { data, error } = await supabase
+      .from("team_collections")
+      .select("team_id,list_kind")
+      .eq("user_id", userId)
+      .order("team_id", { ascending: true })
+      .order("list_kind", { ascending: true })
+      .range(offset, offset + teamPageSize - 1);
+    if (error) throw error;
+    const page = (data ?? []) as { team_id: string; list_kind: TeamListKind }[];
+    collections.push(...page);
+    if (page.length < teamPageSize) break;
   }
-
-  const collections = collectionData ?? [];
   const ownIds = new Set(collections.filter((item) => item.list_kind === "own").map((item) => item.team_id));
   const opponentIds = new Set(
     collections.filter((item) => item.list_kind === "opponent").map((item) => item.team_id)

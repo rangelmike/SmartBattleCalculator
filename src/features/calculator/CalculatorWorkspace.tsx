@@ -26,6 +26,7 @@ import type { PokemonNature } from "@/lib/pokemon/types";
 import type { AppProfile } from "@/lib/supabase/auth";
 import { getPopularPokemonCommonSet } from "@/lib/supabase/popular-common-sets";
 import { loadTeamLibrary, saveTeamToLibrary } from "@/lib/supabase/teams";
+import { describeServiceError } from "@/lib/supabase/service-error";
 
 const emptyLibrary: TeamLibrary = { own: [], opponent: [] };
 
@@ -35,6 +36,7 @@ export function CalculatorWorkspace({ profile }: { profile: AppProfile }) {
   const [pickerSide, setPickerSide] = useState<BattleSide | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [storageError, setStorageError] = useState(false);
   const [initialStats, setInitialStats] = useState<Record<string, InitialPokemonStats>>({});
   const [boosts, setBoosts] = useState<BattleBoostState>({});
   const [currentHp, setCurrentHp] = useState<BattleHpState>({});
@@ -44,12 +46,19 @@ export function CalculatorWorkspace({ profile }: { profile: AppProfile }) {
     void loadTeamLibrary(profile.id).then((result) => {
       if (active) setLibrary(result);
     }).catch((cause) => {
-      if (active) setError(cause instanceof Error ? cause.message : "Could not load saved teams.");
+      if (active) setError(describeServiceError(cause, "Could not load saved teams."));
     });
     return () => { active = false; };
   }, [profile.id]);
 
-  useEffect(() => writeCalculatorSession(profile.id, session), [profile.id, session]);
+  useEffect(() => {
+    try {
+      writeCalculatorSession(profile.id, session);
+      setStorageError(false);
+    } catch {
+      setStorageError(true);
+    }
+  }, [profile.id, session]);
 
   const selectedOwn = session.own.slots.find((slot) => slot.id === session.own.selectedId) ?? null;
   const selectedOpponent = session.opponent.slots.find((slot) => slot.id === session.opponent.selectedId) ?? null;
@@ -95,7 +104,7 @@ export function CalculatorWorkspace({ profile }: { profile: AppProfile }) {
       const seeds = await Promise.all(speciesNames.map(async (species) => {
         const rules = await loadChampionsPokemonRules(species);
         const base = await createChampionsMember(rules.species);
-        const common = profile.isLocal ? null : await getPopularPokemonCommonSet(rules.species);
+        const common = profile.isLocal ? null : await getPopularPokemonCommonSet(rules.species).catch(() => null);
         return { base, rules, common };
       }));
       const usedItems = session[side].slots.slice(0, 6 - speciesNames.length).map((slot) => slot.member.item);
@@ -204,6 +213,7 @@ export function CalculatorWorkspace({ profile }: { profile: AppProfile }) {
         <h1 className="text-2xl font-semibold">Pokemon damage calculator</h1>
       </div>
       {error ? <div className="mb-4 flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert"><AlertCircle className="h-4 w-4" /> {error}</div> : null}
+      {storageError ? <div className="mb-4 flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert"><AlertCircle className="h-4 w-4" /> Browser storage is full or unavailable. This battle will work for now but may not survive a reload; free browser storage before leaving.</div> : null}
       <DamageOverview
         own={ownForBattle} opponent={opponentForBattle} field={session.field}
         selectedMove={session.selectedMove} observations={session.observations}

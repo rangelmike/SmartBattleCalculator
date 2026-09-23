@@ -46,6 +46,7 @@ import {
   saveTeamToLibrary,
   updateTeamInLibrary
 } from "@/lib/supabase/teams";
+import { describeServiceError } from "@/lib/supabase/service-error";
 
 type ProfilePageProps = {
   profile: AppProfile;
@@ -111,7 +112,7 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
       })
       .catch((loadError) => {
         if (isMounted) {
-          setError(loadError instanceof Error ? loadError.message : "Could not load teams.");
+          setError(describeServiceError(loadError, "Could not load teams."));
         }
       })
       .finally(() => {
@@ -139,7 +140,7 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
         })
         .catch((loadError) => {
           if (popularRequest.current === requestId) {
-            setPopularLoadError(loadError instanceof Error ? loadError.message : "Could not load popular teams.");
+            setPopularLoadError(describeServiceError(loadError, "Could not load popular teams."));
           }
         })
         .finally(() => {
@@ -176,7 +177,7 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
       setPopularHasMore(result.hasMore);
     } catch (loadError) {
       if (popularRequest.current === requestId) {
-        setPopularLoadError(loadError instanceof Error ? loadError.message : "Could not load more popular teams.");
+        setPopularLoadError(describeServiceError(loadError, "Could not load more popular teams."));
       }
     } finally {
       if (popularRequest.current === requestId) setIsLoadingPopular(false);
@@ -194,7 +195,7 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
       onProfileUpdated(updatedProfile);
       setStatus("Username updated.");
     } catch (profileError) {
-      setError(profileError instanceof Error ? profileError.message : "Could not update profile.");
+      setError(describeServiceError(profileError, "Could not update profile."));
     } finally {
       setIsSavingProfile(false);
     }
@@ -236,7 +237,7 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
         ? "Popular team imported."
         : destination === "own" ? "Team added to My teams and Opponent teams." : "Opponent team added.");
     } catch (importError) {
-      setError(importError instanceof Error ? importError.message : "Could not import team.");
+      setError(describeServiceError(importError, "Could not import team."));
     } finally {
       setIsImporting(false);
     }
@@ -311,7 +312,7 @@ export function ProfilePage({ profile, onProfileUpdated }: ProfilePageProps) {
       setSelectedTeamId(null);
       setStatus(`${team.name} deleted.`);
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Could not delete team.");
+      setError(describeServiceError(deleteError, "Could not delete team."));
       throw deleteError;
     } finally {
       setIsDeleting(false);

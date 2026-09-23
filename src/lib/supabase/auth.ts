@@ -1,5 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase/client";
+import { assertValidEmailAddress, normalizeEmail } from "@/lib/supabase/email-validation";
 
 export type AppProfile = {
   id: string;
@@ -14,16 +15,29 @@ const localProfileKey = "sbc.local-profile";
 
 export async function getInitialProfile() {
   if (!supabase) {
-    return readLocalProfile();
+    return null;
   }
 
-  const { data } = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
   return sessionToProfile(data.session);
+}
+
+export function getOAuthReturnUrl(origin: string, basePath: string) {
+  return new URL(basePath, origin).toString();
+}
+
+export async function signInWithGoogle() {
+  if (!supabase) throw new Error("Authentication is unavailable. Configure Supabase to sign in.");
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: getOAuthReturnUrl(window.location.origin, import.meta.env.BASE_URL) }
+  });
+  if (error) throw error;
 }
 
 export function subscribeToProfileChanges(handler: AuthChangeHandler) {
   if (!supabase) {
-    window.addEventListener("storage", () => handler(readLocalProfile()));
     return () => undefined;
   }
 
@@ -34,47 +48,53 @@ export function subscribeToProfileChanges(handler: AuthChangeHandler) {
   return () => data.subscription.unsubscribe();
 }
 
-export async function signInWithProfile(email: string, password: string, username?: string) {
-  const normalizedEmail = email.trim().toLowerCase();
-
-  if (!normalizedEmail || !password) {
-    throw new Error("Email and password are required.");
-  }
-
-  if (!supabase) {
-    const profile = {
-      id: `local-${normalizedEmail}`,
-      email: normalizedEmail,
-      username: username?.trim() || normalizedEmail.split("@")[0] || "Trainer",
-      isLocal: true
-    };
-    localStorage.setItem(localProfileKey, JSON.stringify(profile));
-    return profile;
-  }
+export async function signInWithProfile(email: string, password: string) {
+  const normalizedEmail = normalizeEmail(email);
+  assertValidEmailAddress(normalizedEmail);
+  if (!password) throw new Error("Password is required.");
+  if (!supabase) throw new Error("Authentication is unavailable. Configure Supabase to sign in.");
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email: normalizedEmail,
     password
   });
 
-  if (error) {
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password,
-      options: {
-        data: {
-          username: username?.trim() || normalizedEmail.split("@")[0]
-        }
-      }
-    });
+  if (error) throw error;
+  if (!data.session) throw new Error("Could not start a session. Try signing in again.");
 
-    if (signUpError) {
-      throw signUpError;
-    }
+  return sessionToProfile(data.session);
+}
 
-    return sessionToProfile(signUpData.session);
+export async function createProfile(email: string, password: string, username?: string) {
+  const normalizedEmail = normalizeEmail(email);
+  assertValidEmailAddress(normalizedEmail);
+  if (password.length < 6) throw new Error("Password must be at least 6 characters.");
+  if (!supabase) throw new Error("Authentication is unavailable. Configure Supabase to create an account.");
+
+  const validationResponse = await supabase.functions.invoke("validate-signup-email", {
+    body: { email: normalizedEmail }
+  });
+  if (validationResponse.error) throw new Error("Could not verify the email domain. Try again later.");
+  const validation: unknown = validationResponse.data;
+  if (!validation || typeof validation !== "object" || !("valid" in validation) || validation.valid !== true) {
+    throw new Error("That email domain cannot receive mail. Check the address.");
   }
 
+  const { data, error } = await supabase.auth.signUp({
+    email: normalizedEmail,
+    password,
+    options: { data: { username: username?.trim() || normalizedEmail.split("@")[0] } }
+  });
+  if (error) {
+    if (error.code === "user_already_exists" || /already registered/i.test(error.message)) {
+      throw new Error("An account already uses this email. Sign in with its password.");
+    }
+    throw error;
+  }
+  if (data.user?.identities?.length === 0) {
+    throw new Error("An account already uses this email. Sign in with its password.");
+  }
+  if (!data.user) throw new Error("Could not create the account. Try again.");
   return sessionToProfile(data.session);
 }
 
@@ -140,19 +160,4 @@ async function sessionToProfile(session: Session | null) {
     username: storedUsername ?? fallbackUsername,
     isLocal: false
   };
-}
-
-function readLocalProfile() {
-  const rawProfile = localStorage.getItem(localProfileKey);
-
-  if (!rawProfile) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(rawProfile) as AppProfile;
-  } catch {
-    localStorage.removeItem(localProfileKey);
-    return null;
-  }
 }

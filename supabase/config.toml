@@ -26,3 +26,6 @@ enable_signup = true
 enabled = true
 policy = "oneshot"
 inspector_port = 8083
+
+[functions.validate-signup-email]
+verify_jwt = false

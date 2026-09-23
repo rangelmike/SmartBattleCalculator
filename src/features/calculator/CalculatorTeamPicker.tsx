@@ -9,6 +9,7 @@ import type { SavedTeam, TeamLibrary } from "@/lib/pokemon/team-import";
 import { completePokemonTerm, filterTeams, getPokemonSuggestionContext, getPokemonSuggestions, getSourceSuggestions, type TeamSearchSuggestion } from "@/lib/pokemon/team-search";
 import { getPokemonSpriteUrl } from "@/lib/pokemon/team-stats";
 import { searchPopularTeams, suggestPopularPokemon, suggestPopularSources } from "@/lib/supabase/popular-teams";
+import { describeServiceError } from "@/lib/supabase/service-error";
 
 type Props = {
   open: boolean;
@@ -44,7 +45,7 @@ export function CalculatorTeamPicker({ open, side, library, onClose, onSelect, o
       await onAddPokemon([...new Set(matchedSpecies.flatMap((species) => species ? [species] : []))]);
       onClose();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not add Pokemon.");
+      setError(describeServiceError(cause, "Could not add Pokemon."));
     }
   }
 
@@ -69,7 +70,7 @@ export function CalculatorTeamPicker({ open, side, library, onClose, onSelect, o
         setPopularTeams(result.teams);
         setHasMore(result.hasMore);
       }).catch((cause) => {
-        if (current === request.current) setError(cause instanceof Error ? cause.message : "Could not load popular teams.");
+        if (current === request.current) setError(describeServiceError(cause, "Could not load popular teams."));
       }).finally(() => {
         if (current === request.current) setIsLoading(false);
       });
@@ -91,7 +92,7 @@ export function CalculatorTeamPicker({ open, side, library, onClose, onSelect, o
       setPopularTeams((previous) => [...previous, ...result.teams]);
       setHasMore(result.hasMore);
     } catch (cause) {
-      if (current === request.current) setError(cause instanceof Error ? cause.message : "Could not load more teams.");
+      if (current === request.current) setError(describeServiceError(cause, "Could not load more teams."));
     } finally {
       if (current === request.current) setIsLoading(false);
     }

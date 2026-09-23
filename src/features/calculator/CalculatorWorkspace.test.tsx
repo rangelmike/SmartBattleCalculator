@@ -47,6 +47,29 @@ describe("calculator Pokemon search batch", () => {
     });
   }, 10000);
 
+  it("uses a deterministic set when common-set service fails", async () => {
+    mocks.commonSet.mockRejectedValue(new Error("Service unavailable"));
+    render(<CalculatorWorkspace profile={{ id: "batch-test", email: "trainer@example.com", username: "Trainer", isLocal: false }} />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Select team" })[0]);
+    fireEvent.change(screen.getByRole("combobox", { name: "Included Pokemon" }), { target: { value: "Pelipper" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add searched Pokemon" }));
+    await waitFor(() => expect(readCalculatorSession("batch-test").own.slots).toHaveLength(1));
+    expect(readCalculatorSession("batch-test").own.slots[0].member.evs).toMatchObject({ spa: 32, hp: 32, spd: 2 });
+  }, 10000);
+
+  it("keeps the calculator available and warns when browser storage is full", async () => {
+    const write = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Storage full", "QuotaExceededError");
+    });
+    try {
+      render(<CalculatorWorkspace profile={{ id: "batch-test", email: "trainer@example.com", username: "Trainer", isLocal: true }} />);
+      expect(await screen.findByText(/Browser storage is full or unavailable/)).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Pokemon damage calculator" })).toBeInTheDocument();
+    } finally {
+      write.mockRestore();
+    }
+  });
+
   it("keeps sprite-side stage controls synchronized with the stat tables", async () => {
     const own = {
       name: "Pelipper", species: "Pelipper", level: 50, item: "Sitrus Berry", ability: "Drizzle",

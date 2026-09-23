@@ -10,10 +10,12 @@ import {
   subscribeToProfileChanges,
   type AppProfile
 } from "@/lib/supabase/auth";
+import { describeServiceError } from "@/lib/supabase/service-error";
 
 export function App() {
   const [profile, setProfile] = useState<AppProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [initialError, setInitialError] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<AppPage>(readPageFromHash);
   const [theme, setTheme] = useState<AppTheme>(readTheme);
 
@@ -23,6 +25,9 @@ export function App() {
     void getInitialProfile()
       .then((initialProfile) => {
         if (isMounted) setProfile(initialProfile);
+      })
+      .catch((cause) => {
+        if (isMounted) setInitialError(describeServiceError(cause, "Could not restore your session."));
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);
@@ -69,7 +74,7 @@ export function App() {
   }
 
   if (!profile) {
-    return <AuthPage onAuthenticated={setProfile} />;
+    return <AuthPage initialError={initialError} />;
   }
 
   return (
