@@ -79,7 +79,7 @@ export function DamageOverview({ own, opponent, field, selectedMove, observation
         <div className="min-w-0 border-y border-border py-4 lg:border-x lg:border-y-0 lg:px-5 lg:py-0">
           <div className="grid min-h-44 grid-cols-[88px_minmax(0,1fr)_10px_minmax(0,1fr)_88px] items-center gap-x-1 sm:min-h-56 sm:grid-cols-[104px_minmax(0,1fr)_20px_minmax(0,1fr)_104px] sm:gap-x-2">
             <StageControls side="own" pokemon={own} onChange={onChangeBoost} />
-            <PokemonPortrait pokemon={own} label="My Team" />
+            <PokemonPortrait pokemon={own} label="My Team" mirrored />
             <span className="text-center text-xs font-bold text-muted-foreground">VS</span>
             <PokemonPortrait pokemon={opponent} label="Opponent" />
             <StageControls side="opponent" pokemon={opponent} onChange={onChangeBoost} />
@@ -184,9 +184,9 @@ function MoveResults({ title, side, pokemon, results, selection, inputs, onInput
   </div>;
 }
 
-function PokemonPortrait({ pokemon, label }: { pokemon: BattlePokemon | null; label: string }) {
+function PokemonPortrait({ pokemon, label, mirrored = false }: { pokemon: BattlePokemon | null; label: string; mirrored?: boolean }) {
   return <div className="grid w-full min-w-0 justify-items-center gap-1 text-center">
-    <div className="flex h-20 w-full items-center justify-center sm:h-32 xl:h-36">{pokemon ? <img className="h-full w-full object-contain" src={getPokemonSpriteUrl(pokemon.forme)} alt={pokemon.forme} /> : <span className="text-3xl text-muted-foreground">?</span>}</div>
+    <div className="flex h-20 w-full items-center justify-center sm:h-32 xl:h-36">{pokemon ? <img className={`h-full w-full object-contain ${mirrored ? "-scale-x-100" : ""}`} src={getPokemonSpriteUrl(pokemon.forme)} alt={pokemon.forme} /> : <span className="text-3xl text-muted-foreground">?</span>}</div>
     <span className="w-full truncate text-[10px] font-semibold sm:text-xs" title={pokemon?.forme ?? label}>{pokemon?.forme ?? label}</span>
     {pokemon ? <span className="flex w-full items-center justify-center gap-0.5 truncate text-[9px] text-muted-foreground sm:text-[10px]"><Check className="h-2.5 w-2.5 shrink-0" /> {pokemon.currentHp}/{getMaxHp(pokemon)}</span> : null}
   </div>;

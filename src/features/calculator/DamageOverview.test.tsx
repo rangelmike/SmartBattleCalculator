@@ -4,6 +4,15 @@ import { DamageOverview } from "@/features/calculator/DamageOverview";
 import { defaultBattleField, makeBattlePokemon } from "@/lib/pokemon/damage-calculation";
 
 describe("recorded damage units", () => {
+  it("mirrors only the selected My Team sprite in the upper panel", () => {
+    const own = makeBattlePokemon({ name: "Pelipper", species: "Pelipper", level: 50, ability: "Drizzle", item: "Sitrus Berry", nature: "Modest", evs: {}, ivs: {}, moves: ["Hurricane"] });
+    const opponent = makeBattlePokemon({ name: "Archaludon", species: "Archaludon", level: 50, ability: "Stamina", item: "Leftovers", nature: "Modest", evs: {}, ivs: {}, moves: ["Electro Shot"] });
+    render(<DamageOverview own={own} opponent={opponent} field={defaultBattleField()} selectedMove={null} observations={[]} estimate={null} usingEstimate={false}
+      onSelectMove={vi.fn()} onRecord={vi.fn()} onRemoveObservation={vi.fn()} onPreset={vi.fn()} onNature={vi.fn()} onToggleEstimate={vi.fn()} onChangeBoost={vi.fn()} />);
+    expect(screen.getByRole("img", { name: "Pelipper" })).toHaveClass("-scale-x-100");
+    expect(screen.getByRole("img", { name: "Archaludon" })).not.toHaveClass("-scale-x-100");
+  });
+
   it("records My Team damage as percent and opponent damage as HP", () => {
     const own = makeBattlePokemon({ name: "Pelipper", species: "Pelipper", level: 50, ability: "Drizzle", item: "Sitrus Berry", nature: "Modest", evs: {}, ivs: {}, moves: ["Hurricane"] });
     const opponent = makeBattlePokemon({ name: "Archaludon", species: "Archaludon", level: 50, ability: "Stamina", item: "Leftovers", nature: "Modest", evs: {}, ivs: {}, moves: ["Electro Shot"] });
