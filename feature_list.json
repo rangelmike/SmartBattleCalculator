@@ -1,0 +1,1634 @@
+{
+  "project": "Smart Battle Calculator",
+  "last_updated": "2026-10-07",
+  "rules": {
+    "single_active_feature": true,
+    "passing_requires_evidence": true,
+    "do_not_skip_verification": true
+  },
+  "status_legend": {
+    "not_started": "This scoped work or verification has not begun; related groundwork may exist.",
+    "in_progress": "The feature is the current active task.",
+    "blocked": "Work cannot continue until a documented blocker is resolved.",
+    "passing": "All required verification levels passed with structured execution and acceptance evidence; optional pending levels are not certified.",
+    "needs_verification": "Implementation exists, but one or more required checks are pending or failed."
+  },
+  "features": [
+    {
+      "id": "auth-001",
+      "priority": 1,
+      "area": "auth",
+      "title": "Google sign-in screen and OAuth redirect",
+      "user_visible_behavior": "A signed-out user sees only Google sign-in and can start OAuth; errors are recoverable.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/features/auth/AuthPage.test.tsx src/lib/supabase/auth.test.ts.",
+        "Confirm the OAuth return URL uses the Vite base path and the signed-out UI exposes no password form."
+      ],
+      "evidence": [
+        "src/features/auth/AuthPage.test.tsx covers Google-only UI, retry, and canceled callback.",
+        "src/lib/supabase/auth.test.ts covers OAuth redirect construction."
+      ],
+      "notes": "This verifies local UI/client behavior, not a live Google account or hosted provider settings.",
+      "related_files": ["src/features/auth/AuthPage.test.tsx", "src/lib/supabase/auth.test.ts"],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "hosted",
+          "status": "pending",
+          "reason": "Hosted Google OAuth and provider settings remain auth-002."
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "AuthPage.test.tsx asserts Google-only controls; auth.test.ts asserts the BASE_URL OAuth redirect. The cited full-suite run executed both suites; live OAuth remains auth-002.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "app-001",
+      "priority": 2,
+      "area": "app",
+      "title": "Calculator/profile navigation and theme toggle",
+      "user_visible_behavior": "A signed-in user can navigate between calculator and profile and switch light/dark theme.",
+      "status": "needs_verification",
+      "verification": [
+        "Run npm run test -- src/features/navigation/AppShell.test.tsx src/lib/theme.test.ts.",
+        "Confirm the URL hash selects calculator or profile in src/app/App.tsx."
+      ],
+      "evidence": [
+        "src/features/navigation/AppShell.test.tsx covers header theme control.",
+        "src/lib/theme.test.ts covers theme preference behavior."
+      ],
+      "notes": "Local theme/UI tests exist; signed-in hash navigation now requires browser verification before this feature can pass.",
+      "related_files": [
+        "src/features/navigation/AppShell.test.tsx",
+        "src/lib/theme.test.ts",
+        "src/app/App.tsx"
+      ],
+      "required_checks": ["local", "browser"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "browser",
+          "status": "pending",
+          "reason": "Signed-in navigation or mobile interactions have not been checked in a browser."
+        }
+      ],
+      "next_action": "Add isolated signed-in browser checks for calculator/profile hash navigation and theme on desktop/mobile; record the actual result.",
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local",
+          "summary": "The cited full-suite run executed the named local suites; signed-in/mobile browser acceptance is still pending."
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "pending",
+          "summary": "No step-level execution evidence recorded yet; retain the earlier run history."
+        }
+      ]
+    },
+    {
+      "id": "teams-001",
+      "priority": 3,
+      "area": "teams",
+      "title": "Import and validate Champions teams",
+      "user_visible_behavior": "A user can import a Showdown paste or Pokepaste URL, name its source, and cannot save an invalid level-50 Champions set.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/lib/pokemon/showdown-parser.test.ts src/lib/pokemon/team-import.test.ts src/lib/pokemon/champions-data.test.ts.",
+        "Confirm the six-Pokemon Champions rain paste in team-import.test.ts parses in order with moves, items, and EVs."
+      ],
+      "evidence": [
+        "src/lib/pokemon/team-import.test.ts covers the supplied six-Pokemon Pokepaste and invalid-set rejection.",
+        "src/lib/pokemon/champions-data.test.ts covers species, move, ability, item, and SP/EV rules."
+      ],
+      "notes": "The active URL import fetches Pokepaste /raw in the browser; a live network check is separate.",
+      "related_files": [
+        "src/lib/pokemon/showdown-parser.test.ts",
+        "src/lib/pokemon/team-import.test.ts",
+        "src/lib/pokemon/champions-data.test.ts"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "hosted",
+          "status": "pending",
+          "reason": "Actual Pokepaste network access has not been verified."
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "team-import.test.ts asserts the supplied six-member rain paste and its ordered sets; champions-data.test.ts validates Champions legality. The cited full-suite run executed these suites; no live Pokepaste request is certified.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "teams-002",
+      "priority": 4,
+      "area": "teams",
+      "title": "Manage own and opponent team collections",
+      "user_visible_behavior": "Saving to My teams also adds the team to Opponents; saving to Opponents does not add it to My teams. Edits and deletes follow the same underlying team.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/lib/pokemon/team-import.test.ts src/lib/supabase/teams.test.ts.",
+        "Confirm personal team reads retrieve all 200-row pages without dropping collection membership."
+      ],
+      "evidence": [
+        "src/lib/pokemon/team-import.test.ts covers collection membership and update/delete propagation.",
+        "src/lib/supabase/teams.test.ts covers pagination beyond 1,000 rows and failed-page handling."
+      ],
+      "notes": "Local collection/client tests only. Hosted persistence and personal-team/collection ownership RLS still need integration coverage; backend-001 currently targets Popular permissions and triggers.",
+      "related_files": ["src/lib/pokemon/team-import.test.ts", "src/lib/supabase/teams.test.ts"],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "integration",
+          "status": "pending",
+          "reason": "Personal team/collection ownership RLS is not covered by the current Popular pgTAP suite."
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "teams.test.ts asserts 1,001 own/opponent teams using bounded 200-row ranges and rejects failed pages; the cited full-suite run executed it. Supabase calls are mocked.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "teams-003",
+      "priority": 5,
+      "area": "teams",
+      "title": "Create and edit Champions teams manually",
+      "user_visible_behavior": "A user can edit members, legal natures, moves, items, abilities, and EVs, then drag Pokemon into a saved order.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/features/teams/TeamEditorDialog.test.tsx src/lib/pokemon/team-order.test.ts src/lib/pokemon/champions-natures.test.ts.",
+        "Confirm invalid teams are rejected before save by src/lib/pokemon/champions-data.ts."
+      ],
+      "evidence": [
+        "src/features/teams/TeamEditorDialog.test.tsx covers dragged order and nature controls.",
+        "src/lib/pokemon/team-order.test.ts and champions-natures.test.ts cover ordering and valid stat pairs."
+      ],
+      "notes": "Profile UI uses the same editor for personal and administrator-managed Popular teams.",
+      "related_files": [
+        "src/features/teams/TeamEditorDialog.test.tsx",
+        "src/lib/pokemon/team-order.test.ts",
+        "src/lib/pokemon/champions-natures.test.ts",
+        "src/lib/pokemon/champions-data.ts"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "team-import.test.ts rejects invalid manually-created teams before persistence; champions-data.test.ts checks illegal abilities/moves/SP totals. These suites ran in the cited full run.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "teams-004",
+      "priority": 6,
+      "area": "teams",
+      "title": "Inspect sets, level-50 stats, and Mega forms",
+      "user_visible_behavior": "A user can inspect a saved team with sprites, item icons, moves, base and real stats, and switch regular/Mega forms when a matching stone exists.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/features/teams/TeamViewer.test.tsx src/lib/pokemon/team-stats.test.ts.",
+        "Confirm the sprite map resolves every Champions species and Mega X/Y/Z stones yield the expected form."
+      ],
+      "evidence": [
+        "src/features/teams/TeamViewer.test.tsx covers Mega default and regular-form switch.",
+        "src/lib/pokemon/team-stats.test.ts covers stats, all Champions sprite mappings, item-linked Mega forms, and move details."
+      ],
+      "notes": "External Showdown image availability is not proven by local tests.",
+      "related_files": [
+        "src/features/teams/TeamViewer.test.tsx",
+        "src/lib/pokemon/team-stats.test.ts"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "hosted",
+          "status": "pending",
+          "reason": "External Showdown sprite availability has not been verified."
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "team-stats.test.ts asserts a mapping for every generation-0 species and all X/Y/Z Mega Stones; the cited full-suite run executed it. Remote asset reachability was not checked.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "teams-005",
+      "priority": 7,
+      "area": "teams",
+      "title": "Search teams with source and multiple Pokemon filters",
+      "user_visible_behavior": "A user can filter saved teams by name/source and all named Pokemon, with autocomplete for the active source or Pokemon term.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/lib/pokemon/team-search.test.ts src/features/teams/FilterAutocomplete.test.tsx.",
+        "Confirm Enter completes a comma-separated Pokemon term without changing other terms."
+      ],
+      "evidence": [
+        "src/lib/pokemon/team-search.test.ts covers filtering, ranking, and multi-term completion.",
+        "src/features/teams/FilterAutocomplete.test.tsx covers keyboard completion and asynchronous source suggestions."
+      ],
+      "notes": "Personal-team filtering remains client-side; large-library server pagination is a separate backlog item.",
+      "related_files": [
+        "src/lib/pokemon/team-search.test.ts",
+        "src/features/teams/FilterAutocomplete.test.tsx"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "team-search.test.ts asserts completion of a middle comma-separated term without changing others; FilterAutocomplete.test.tsx covers Enter. The cited full-suite run executed these assertions.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "popular-001",
+      "priority": 8,
+      "area": "popular teams",
+      "title": "Browse and search Popular teams",
+      "user_visible_behavior": "Authenticated users can browse paged Popular teams and search by name/source and included Pokemon; non-admin UI shows no write controls.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/features/teams/ProfilePage.test.tsx src/lib/supabase/popular-teams.test.ts.",
+        "Confirm server RPC requests are bounded and carry both text and Pokemon filters."
+      ],
+      "evidence": [
+        "src/features/teams/ProfilePage.test.tsx covers regular-user viewing and admin UI controls.",
+        "src/lib/supabase/popular-teams.test.ts covers bounded RPC search and autocomplete arguments."
+      ],
+      "notes": "UI checks are not authorization; live SQL RLS verification remains open in backend-001.",
+      "related_files": [
+        "src/features/teams/ProfilePage.test.tsx",
+        "src/lib/supabase/popular-teams.test.ts"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "integration",
+          "status": "pending",
+          "reason": "Popular RLS requires the pending backend-001 pgTAP run."
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "popular-teams.test.ts asserts bounded search_popular_teams RPC arguments with text and Pokemon filters; the cited full-suite run executed it. This is mocked client evidence, not RLS.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "popular-002",
+      "priority": 9,
+      "area": "popular teams",
+      "title": "Load common Pokemon sets for calculator defaults",
+      "user_visible_behavior": "Selecting an individual Pokemon loads its stored common moves, item, ability, EVs, and nature when available, with a deterministic legal default otherwise.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/lib/supabase/popular-common-sets.test.ts src/lib/pokemon/individual-set.test.ts src/features/calculator/CalculatorWorkspace.test.tsx.",
+        "Confirm a missing or failed lookup produces a usable deterministic set."
+      ],
+      "evidence": [
+        "src/lib/supabase/popular-common-sets.test.ts covers one-species reads and absence.",
+        "src/lib/pokemon/individual-set.test.ts and CalculatorWorkspace.test.tsx cover stored-set fields and fallback defaults."
+      ],
+      "notes": "The SQL trigger that refreshes common sets is implemented but lacks a database integration test; see backend-001.",
+      "related_files": [
+        "src/lib/supabase/popular-common-sets.test.ts",
+        "src/lib/pokemon/individual-set.test.ts",
+        "src/features/calculator/CalculatorWorkspace.test.tsx"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "integration",
+          "status": "pending",
+          "reason": "Common-set refresh requires the pending backend-001 pgTAP run."
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "individual-set.test.ts asserts a legal item and four learnable moves without a stored set; CalculatorWorkspace.test.tsx covers lookup-error fallback. These ran in the cited full suite.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "calc-001",
+      "priority": 10,
+      "area": "calculator",
+      "title": "Load saved teams and add individual Pokemon",
+      "user_visible_behavior": "My Team uses own saved teams, Opponent Team uses opponent or Popular teams, and adding species preserves at most six slots.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/features/calculator/CalculatorTeamPicker.test.tsx src/lib/pokemon/calculator-session.test.ts.",
+        "Confirm multiple searched Pokemon can be added even when no saved team contains them together."
+      ],
+      "evidence": [
+        "src/features/calculator/CalculatorTeamPicker.test.tsx covers own/opponent sources, Popular search, and batch additions.",
+        "src/lib/pokemon/calculator-session.test.ts covers six-slot replacement and roster loading."
+      ],
+      "notes": "Popular catalog reads require an authenticated Supabase session.",
+      "related_files": [
+        "src/features/calculator/CalculatorTeamPicker.test.tsx",
+        "src/lib/pokemon/calculator-session.test.ts"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "CalculatorTeamPicker.test.tsx asserts batch Pokemon additions and suggestions even when no saved team contains the combination; the cited full-suite run executed it.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "calc-002",
+      "priority": 11,
+      "area": "calculator",
+      "title": "Calculate Champions damage with field and Mega abilities",
+      "user_visible_behavior": "At level 50, damage changes with field, stat stages, critical hits, forms, and their actual abilities, including Z Mega forms.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/lib/pokemon/damage-calculation.test.ts src/features/calculator/CalculatorTeamPanel.test.tsx.",
+        "Confirm Mega Golisopod, Lucario Z, and Absol Z ability effects change calculated damage."
+      ],
+      "evidence": [
+        "src/lib/pokemon/damage-calculation.test.ts covers Champions generation, field modifiers, stat stages, Mega stats and abilities.",
+        "src/features/calculator/CalculatorTeamPanel.test.tsx covers form/ability switching in the UI."
+      ],
+      "notes": "Core damage uses @smogon/calc generation 0 rather than a custom formula.",
+      "related_files": [
+        "src/lib/pokemon/damage-calculation.test.ts",
+        "src/features/calculator/CalculatorTeamPanel.test.tsx"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "damage-calculation.test.ts compares Tough Claws, Sharpness and Aura Guard damage with raw no-ability results; the cited full-suite run executed those assertions.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "calc-003",
+      "priority": 12,
+      "area": "calculator",
+      "title": "Show recoil, healing, and recovery-aware KO projections",
+      "user_visible_behavior": "Damage results show move recoil or healing as percentages and account for relevant one-time and passive recovery in hits to KO.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/lib/pokemon/damage-calculation.test.ts src/features/calculator/DamageOverview.test.tsx.",
+        "Confirm Sitrus Berry, Leftovers, Grassy Terrain, Rain Dish, and draining moves affect the appropriate result."
+      ],
+      "evidence": [
+        "src/lib/pokemon/damage-calculation.test.ts covers healing/recoil and recovery-aware KO cases.",
+        "src/features/calculator/DamageOverview.test.tsx covers per-move healing/recoil display."
+      ],
+      "notes": "Only supported mechanics should be claimed; add focused tests for newly modeled effects.",
+      "related_files": [
+        "src/lib/pokemon/damage-calculation.test.ts",
+        "src/features/calculator/DamageOverview.test.tsx"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "damage-calculation.test.ts asserts draining, recoil and recovery-aware Sitrus/Leftovers/Grassy Terrain/Rain Dish outcomes; the cited full-suite run executed it.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "calc-004",
+      "priority": 13,
+      "area": "calculator",
+      "title": "Record damage and estimate opponent spreads",
+      "user_visible_behavior": "Own attacks are recorded as percent dealt; opponent attacks as HP lost. Observations suggest a plausible opponent EV/nature spread.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/features/calculator/DamageOverview.test.tsx src/lib/pokemon/damage-observations.test.ts.",
+        "Confirm mixed-attacker nature recommendations follow base-stat and Speed rules."
+      ],
+      "evidence": [
+        "src/features/calculator/DamageOverview.test.tsx checks the distinct percent/HP inputs.",
+        "src/lib/pokemon/damage-observations.test.ts checks fitted observations and sensible full EV/nature defaults."
+      ],
+      "notes": "Estimates are candidates based on observed damage, not a guarantee of the rival's hidden set.",
+      "related_files": [
+        "src/features/calculator/DamageOverview.test.tsx",
+        "src/lib/pokemon/damage-observations.test.ts"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "damage-observations.test.ts and damage-calculation.test.ts assert full EV spreads, mixed offense thresholds and Speed nature rules; the cited full-suite run executed them.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "calc-005",
+      "priority": 14,
+      "area": "calculator",
+      "title": "Keep temporary HP/stages and reset battle state",
+      "user_visible_behavior": "HP and five stat stages follow each selected Pokemon during a calculator session; Reset stats clears selected temporary changes and New battle clears the opponent and field.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/lib/pokemon/battle-hp.test.ts src/lib/pokemon/battle-boosts.test.ts src/lib/pokemon/calculator-session.test.ts src/features/calculator/CalculatorTeamPanel.test.tsx.",
+        "Confirm temporary HP/stages are not restored from browser storage after calculator exit."
+      ],
+      "evidence": [
+        "src/lib/pokemon/battle-hp.test.ts and battle-boosts.test.ts cover independent temporary state.",
+        "src/lib/pokemon/calculator-session.test.ts covers reset/new battle and persistence boundaries.",
+        "src/features/calculator/CalculatorTeamPanel.test.tsx covers UI reset behavior."
+      ],
+      "notes": "The per-user roster/field/observations session persists locally; HP and stages deliberately do not.",
+      "related_files": [
+        "src/lib/pokemon/battle-hp.test.ts",
+        "src/lib/pokemon/battle-boosts.test.ts",
+        "src/lib/pokemon/calculator-session.test.ts",
+        "src/features/calculator/CalculatorTeamPanel.test.tsx"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "calculator-session.test.ts asserts persisted state omits temporary HP/stages; the cited full-suite run executed it. Live browser storage behavior is not certified here.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "calc-006",
+      "priority": 15,
+      "area": "calculator",
+      "title": "Use mobile swipe panels and clear sprite orientation",
+      "user_visible_behavior": "On mobile, My Team, Field, and Opponent Team navigate laterally; only the selected My Team sprite in the upper damage panel is mirrored.",
+      "status": "needs_verification",
+      "verification": [
+        "Run npm run test -- src/features/calculator/CalculatorPanelCarousel.test.tsx src/features/calculator/DamageOverview.test.tsx.",
+        "Confirm the carousel preserves each panel's form state while switching."
+      ],
+      "evidence": [
+        "src/features/calculator/CalculatorPanelCarousel.test.tsx covers panel switching and preserved form state.",
+        "src/features/calculator/DamageOverview.test.tsx covers own-only sprite mirroring."
+      ],
+      "notes": "Local switching/state/sprite tests exist; mobile visual and gesture behavior now require a browser result before this feature can pass.",
+      "related_files": [
+        "src/features/calculator/CalculatorPanelCarousel.test.tsx",
+        "src/features/calculator/DamageOverview.test.tsx"
+      ],
+      "required_checks": ["local", "browser"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "browser",
+          "status": "pending",
+          "reason": "Signed-in navigation or mobile interactions have not been checked in a browser."
+        }
+      ],
+      "next_action": "Add browser verification of mobile carousel gestures and preserved panel state using isolated fixtures; record the actual result.",
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local",
+          "summary": "The cited full-suite run executed the named local suites; signed-in/mobile browser acceptance is still pending."
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "pending",
+          "summary": "No step-level execution evidence recorded yet; retain the earlier run history."
+        }
+      ]
+    },
+    {
+      "id": "ops-001",
+      "priority": 16,
+      "area": "reliability",
+      "title": "Handle storage, quota, and service failures without silent truncation",
+      "user_visible_behavior": "The app explains common service failures, warns when battle storage is unavailable, and does not silently lose later pages of personal teams.",
+      "status": "passing",
+      "verification": [
+        "Run npm run test -- src/lib/supabase/service-error.test.ts src/lib/supabase/teams.test.ts src/features/calculator/CalculatorWorkspace.test.tsx.",
+        "Confirm a failed team page rejects rather than returning a partial library."
+      ],
+      "evidence": [
+        "src/lib/supabase/service-error.test.ts covers quota, read-only, rate-limit, paused, and network errors.",
+        "src/lib/supabase/teams.test.ts covers all personal pages and failed-page handling.",
+        "src/features/calculator/CalculatorWorkspace.test.tsx covers full-browser-storage fallback."
+      ],
+      "notes": "These are continuity measures, not increases to Supabase or GitHub Pages quotas.",
+      "related_files": [
+        "src/lib/supabase/service-error.test.ts",
+        "src/lib/supabase/teams.test.ts",
+        "src/features/calculator/CalculatorWorkspace.test.tsx"
+      ],
+      "required_checks": ["local"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ],
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "The cited historical npm run test executed the complete 34-file, 150-test suite, including the focused suites named in this step (a superset of the requested command).",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "teams.test.ts asserts a failed page rejects the whole library; the cited full-suite run executed it with mocked Supabase responses.",
+          "run_id": "2026-10-07-harness-local"
+        }
+      ]
+    },
+    {
+      "id": "quality-001",
+      "priority": 17,
+      "area": "quality",
+      "title": "Repair browser E2E smoke and cover signed-in flows",
+      "user_visible_behavior": "A browser regression run can verify the current Google sign-in screen and critical calculator/profile workflows on desktop and mobile.",
+      "status": "needs_verification",
+      "verification": [
+        "Run npm run test:e2e with installed Chromium; confirm current Google sign-in and intro controls.",
+        "Add isolated signed-in calculator/profile navigation and critical workflows.",
+        "Verify changed mobile layout/gestures in browser without mutating production data."
+      ],
+      "evidence": [
+        "Run 2026-10-07-harness-local executed the repaired signed-out smoke on desktop/mobile. Signed-in and mobile gesture acceptance remain pending."
+      ],
+      "notes": "The signed-out smoke assertion is repaired and is now a CI/deploy gate. Signed-in calculator/profile and mobile gesture coverage are still pending; this feature is not complete.",
+      "related_files": ["e2e/smoke.spec.ts", "playwright.config.ts"],
+      "required_checks": ["local", "browser"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "browser",
+          "status": "pending",
+          "reason": "Signed-in navigation or mobile interactions have not been checked in a browser."
+        }
+      ],
+      "next_action": "Extend Playwright with isolated signed-in calculator/profile workflows and mobile gestures; then rerun and record desktop/mobile results.",
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "browser",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local",
+          "summary": "The cited Playwright run passed desktop/mobile signed-out Google sign-in and intro interactions only."
+        },
+        {
+          "step": 2,
+          "level": "browser",
+          "status": "pending",
+          "summary": "No step-level execution evidence recorded yet; retain the earlier run history."
+        },
+        {
+          "step": 3,
+          "level": "browser",
+          "status": "pending",
+          "summary": "No step-level execution evidence recorded yet; retain the earlier run history."
+        }
+      ]
+    },
+    {
+      "id": "backend-001",
+      "priority": 18,
+      "area": "backend",
+      "title": "Integration-verify Popular teams RLS and common-set refresh",
+      "user_visible_behavior": "Only the verified designated admin can change Popular teams, while authenticated users can read them and changed species get updated common sets.",
+      "status": "needs_verification",
+      "verification": [
+        "On a fresh disposable local database, run supabase db start and npm run test:db.",
+        "Verify admin/non-admin/anonymous permissions, creator identity and email confirmation.",
+        "Verify insert/update/delete common-set refresh and preservation of unrelated species; inspect the pgTAP result."
+      ],
+      "evidence": [],
+      "notes": "Local suite implemented with 24 assertions. Blocker: local Postgres/Docker unavailable. Next action: start the local test environment and run npm run test:db. A passing result will not prove remote migration state or all personal-team ownership RLS.",
+      "related_files": [
+        "supabase/tests/database/permissions.test.sql",
+        "supabase/migrations/20260922002000_popular_teams.sql",
+        "supabase/migrations/20260922003000_popular_pokemon_common_sets.sql"
+      ],
+      "required_checks": ["integration"],
+      "check_results": [
+        {
+          "level": "integration",
+          "status": "pending",
+          "reason": "Local Postgres/Docker unavailable; test:db failed before any SQL assertion ran.",
+          "run_id": "2026-10-07-harness-backend-unavailable"
+        }
+      ],
+      "next_action": "Start a working Docker Linux engine, capture npm run harness:snapshot, run supabase db start and npm run test:db on a disposable local database, and record the actual integration result.",
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "integration",
+          "status": "pending",
+          "summary": "Database execution remains pending: earlier test:db failed before SQL assertions because local Postgres/Docker was unavailable."
+        },
+        {
+          "step": 2,
+          "level": "integration",
+          "status": "pending",
+          "summary": "Database execution remains pending: earlier test:db failed before SQL assertions because local Postgres/Docker was unavailable."
+        },
+        {
+          "step": 3,
+          "level": "integration",
+          "status": "pending",
+          "summary": "Database execution remains pending: earlier test:db failed before SQL assertions because local Postgres/Docker was unavailable."
+        }
+      ]
+    },
+    {
+      "id": "auth-002",
+      "priority": 19,
+      "area": "auth",
+      "title": "Verify hosted Google-only access and existing account continuity",
+      "user_visible_behavior": "Google OAuth signs in on local and Pages URLs, existing users retain their profile/team access, and direct email/password API sign-in is disabled.",
+      "status": "not_started",
+      "verification": [
+        "Check the hosted Supabase Google provider and exact OAuth redirect allowlist.",
+        "Verify an existing user's Supabase ID and saved teams after Google sign-in.",
+        "Verify the Email provider is disabled at the Supabase API level."
+      ],
+      "evidence": [],
+      "notes": "The repository cannot prove remote provider settings; legacy password helpers remain in source but are not exposed by the current UI.",
+      "related_files": ["docs/setup.md", "src/lib/supabase/auth.ts"],
+      "required_checks": ["hosted"],
+      "check_results": [
+        {
+          "level": "hosted",
+          "status": "pending",
+          "reason": "Hosted OAuth/provider settings and existing-account continuity require configured external access."
+        }
+      ],
+      "next_action": "With authorized access to the configured hosted Supabase project and a test account, verify the provider/redirect settings and existing-account continuity; record hosted evidence without secrets or user IDs.",
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "hosted",
+          "status": "pending",
+          "summary": "Configured hosted environment/account checks have not been executed."
+        },
+        {
+          "step": 2,
+          "level": "hosted",
+          "status": "pending",
+          "summary": "Configured hosted environment/account checks have not been executed."
+        },
+        {
+          "step": 3,
+          "level": "hosted",
+          "status": "pending",
+          "summary": "Configured hosted environment/account checks have not been executed."
+        }
+      ]
+    },
+    {
+      "id": "ai-001",
+      "priority": 20,
+      "area": "recommendations",
+      "title": "Complete an authenticated four-Pokemon recommendation flow",
+      "user_visible_behavior": "A user can request a four-Pokemon matchup recommendation and receive a validated, useful deterministic result when Gemini is unavailable.",
+      "status": "not_started",
+      "verification": [
+        "Connect a UI flow to an authenticated Edge Function with compact scored summaries.",
+        "Validate the response schema and test a non-empty deterministic fallback without Gemini.",
+        "Check server timeout at 15 seconds and end-to-end response target under 20 seconds."
+      ],
+      "evidence": [],
+      "notes": "A schema, cache table, and suggest-team function exist, but no UI calls them and the current fallback selects nobody.",
+      "related_files": [
+        "src/lib/ai/suggestion-schema.ts",
+        "supabase/functions/suggest-team/index.ts"
+      ],
+      "required_checks": ["local", "browser", "functions", "integration"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "pending",
+          "reason": "The authenticated recommendation flow has not been implemented or verified."
+        },
+        {
+          "level": "browser",
+          "status": "pending",
+          "reason": "The authenticated recommendation flow has not been implemented or verified."
+        },
+        {
+          "level": "functions",
+          "status": "pending",
+          "reason": "The authenticated recommendation flow has not been implemented or verified."
+        },
+        {
+          "level": "integration",
+          "status": "pending",
+          "reason": "The authenticated recommendation flow has not been implemented or verified."
+        }
+      ],
+      "next_action": "Implement and test a useful deterministic four-Pokemon recommendation before connecting the authenticated UI/Edge Function flow; keep Gemini server-side.",
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "browser",
+          "status": "pending",
+          "summary": "No step-level execution evidence recorded yet; retain the earlier run history."
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "pending",
+          "summary": "No step-level execution evidence recorded yet; retain the earlier run history."
+        },
+        {
+          "step": 3,
+          "level": "functions",
+          "status": "pending",
+          "summary": "No step-level execution evidence recorded yet; retain the earlier run history."
+        }
+      ]
+    },
+    {
+      "id": "scale-001",
+      "priority": 21,
+      "area": "scaling",
+      "title": "Paginate and filter large personal libraries on the server",
+      "user_visible_behavior": "Accounts with many teams can search and open personal teams without first downloading every saved row.",
+      "status": "not_started",
+      "verification": [
+        "Add bounded server-side personal-team search and pagination while preserving own/opponent membership.",
+        "Test multiple pages, filters, concurrent edits, and empty results.",
+        "Measure network transfer and response time with a representative large library."
+      ],
+      "evidence": [],
+      "notes": "Current 200-row request paging avoids truncation, but the client still assembles the entire library.",
+      "related_files": ["src/lib/supabase/teams.ts", "src/features/teams/ProfilePage.tsx"],
+      "required_checks": ["local", "integration"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "pending",
+          "reason": "Server-side personal-library pagination has not been implemented."
+        },
+        {
+          "level": "integration",
+          "status": "pending",
+          "reason": "Server-side personal-library pagination has not been implemented."
+        }
+      ],
+      "next_action": "Define bounded personal-team search/page contracts that preserve collection membership, then implement matching client/database tests.",
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "pending",
+          "summary": "No step-level execution evidence recorded yet; retain the earlier run history."
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "pending",
+          "summary": "No step-level execution evidence recorded yet; retain the earlier run history."
+        },
+        {
+          "step": 3,
+          "level": "integration",
+          "status": "pending",
+          "summary": "No step-level execution evidence recorded yet; retain the earlier run history."
+        }
+      ]
+    },
+    {
+      "id": "harness-001",
+      "priority": 22,
+      "area": "quality",
+      "title": "Strengthen feature evidence, session continuity and deployment gates",
+      "user_visible_behavior": "Each scoped addition has acceptance steps, identified verification results and a persistent continuation point; Pages deployment waits for shared quality checks.",
+      "status": "needs_verification",
+      "verification": [
+        "Run npm run harness:test and npm run harness:check; reject inconsistent feature state, invalid evidence and broken paths.",
+        "Run npm run typecheck, npm run lint, npm run test and npm run build.",
+        "Run npm run test:e2e on desktop and mobile for the current sign-in screen.",
+        "Review shared CI/deploy dependency and local-only database/function commands; record unavailable backend prerequisites without claiming a backend pass.",
+        "Run npm run check:functions and npm run test:db; the database suite must execute successfully before the harness integration requirement passes.",
+        "Report progress from authoritative state; reject missing acceptance-step evidence and a stale session handoff."
+      ],
+      "related_files": [
+        "AGENTS.md",
+        "feature_list.json",
+        "session-handoff.md",
+        "docs/verification.md",
+        "scripts/validate-harness.mjs",
+        "scripts/validate-harness.test.mjs",
+        ".github/workflows/checks.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/deploy-pages.yml",
+        "e2e/smoke.spec.ts",
+        "supabase/tests/database/permissions.test.sql",
+        "scripts/README.md",
+        "package.json",
+        "PROGRESS.md"
+      ],
+      "required_checks": ["local", "browser", "functions", "integration"],
+      "check_results": [
+        {
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-continuity-local"
+        },
+        {
+          "level": "browser",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "functions",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local"
+        },
+        {
+          "level": "integration",
+          "status": "pending",
+          "reason": "The command failed before SQL assertions because local Postgres/Docker is unavailable.",
+          "run_id": "2026-10-07-harness-backend-unavailable"
+        }
+      ],
+      "evidence": [
+        "scripts/validate-harness.test.mjs verifies invalid states, missing/failed/skipped runs and references; run 2026-10-07-harness-local passed all 14 cases.",
+        "Workflow YAML inspection confirmed Pages depends on the shared frontend/backend gates. Their remote Actions execution remains unverified.",
+        "The current sign-in browser smoke and every Edge Function TypeScript file passed in run 2026-10-07-harness-local. SQL execution is still required.",
+        "Run 2026-10-07-continuity-local passed 26 harness tests, typecheck, lint, the full 150-test suite with two workers, build and progress reporting. All prior and failed audit runs are retained. Schema v2 binds every acceptance step to a result and validates the generated handoff against authoritative continuation."
+      ],
+      "notes": "Continuity audit is implemented and locally verified. AGENTS.md was reviewed without editing it; protocol clarifications are in docs/verification.md. Historical browser/function checks are retained because their source was unchanged. Blocker: the prior Docker/local Postgres integration prerequisite remains unresolved, and its availability was not rechecked in this audit. Next action: start the disposable local database and record the actual pgTAP result. Default-concurrency UI test failures passed at two workers without changing application tests; investigate if CI reproduces them.",
+      "next_action": "Start a working Docker Linux engine, capture npm run harness:snapshot, run supabase db start and npm run test:db on a disposable local database, and append the actual integration/acceptance results. Close harness-001 and backend-001 only after their required checks and steps pass; do not reset existing local data without confirming it can be discarded.",
+      "acceptance_results": [
+        {
+          "step": 1,
+          "level": "local",
+          "status": "passed",
+          "summary": "26 harness regression tests and harness:check passed, including per-step execution evidence and handoff consistency.",
+          "run_id": "2026-10-07-continuity-local"
+        },
+        {
+          "step": 2,
+          "level": "local",
+          "status": "passed",
+          "summary": "Typecheck, lint, build and all 34 files/150 unit tests passed. The full test command used --maxWorkers=2 after default-concurrency UI failures; no application/test assertions were changed. Failed attempts are retained separately.",
+          "run_id": "2026-10-07-continuity-local"
+        },
+        {
+          "step": 3,
+          "level": "browser",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local",
+          "summary": "Historical Playwright run: 2 signed-out desktop/mobile tests passed; no browser UI changed in the continuity audit."
+        },
+        {
+          "step": 4,
+          "level": "local",
+          "status": "passed",
+          "run_id": "2026-10-07-harness-local",
+          "summary": "Historical YAML inspection verified shared CI/deploy dependencies and local-only backend commands; actual remote Actions execution remains unverified."
+        },
+        {
+          "step": 5,
+          "level": "integration",
+          "status": "pending",
+          "summary": "Function typechecking passed historically; database suite still has not executed SQL assertions. No integration pass is claimed."
+        },
+        {
+          "step": 6,
+          "level": "local",
+          "status": "passed",
+          "summary": "harness:report printed state, acceptance progress, required checks, next actions and run history; CLI tests reject a stale handoff and confirm output-only regeneration without file changes.",
+          "run_id": "2026-10-07-continuity-local"
+        }
+      ]
+    }
+  ],
+  "schema_version": 2,
+  "verification_runs": [
+    {
+      "id": "2026-10-07-harness-local",
+      "recorded_at": "2026-10-07T06:02:28.353Z",
+      "revision": "3691a1c45cfe8c2d56a1d33b7fbc5efd51739f40",
+      "source_snapshot": "0a05e3e20bc0960fb4997d52c20e575c3f74a3373139f4f9572c627017f8a278",
+      "worktree": [
+        " M .github/workflows/ci.yml",
+        " M .github/workflows/deploy-pages.yml",
+        " M AGENTS.md",
+        " M README.md",
+        " M docs/architecture.md",
+        " M docs/setup.md",
+        " M e2e/smoke.spec.ts",
+        " M package.json",
+        " M playwright.config.ts",
+        " M vitest.config.ts",
+        "?? .github/workflows/checks.yml",
+        "?? PROGRESS.md",
+        "?? docs/verification.md",
+        "?? e2e/README.md",
+        "?? feature_list.json",
+        "?? scripts/README.md",
+        "?? scripts/check-functions.mjs",
+        "?? scripts/validate-harness.mjs",
+        "?? scripts/validate-harness.test.mjs",
+        "?? session-handoff.md",
+        "?? src/app/README.md",
+        "?? src/features/README.md",
+        "?? src/features/auth/README.md",
+        "?? src/features/calculator/README.md",
+        "?? src/features/navigation/README.md",
+        "?? src/features/teams/README.md",
+        "?? src/lib/README.md",
+        "?? src/lib/ai/README.md",
+        "?? src/lib/pokemon/README.md",
+        "?? src/lib/supabase/README.md",
+        "?? src/styles/README.md",
+        "?? src/test/README.md",
+        "?? supabase/README.md",
+        "?? supabase/tests/"
+      ],
+      "environment": "Windows/PowerShell; Node v24.21.0; npm 11.19.0; Vitest 3.2.7; Vite 7.3.6; Playwright 1.63.0; Deno 2.9.6 via temporary executable. Frontend checks requiring esbuild ran outside the restricted shell. CI Node 22 was not executed here.",
+      "checks": [
+        {
+          "level": "local",
+          "command": "npm run harness:check",
+          "result": "passed",
+          "summary": "Feature schema, evidence references, affected paths and local documentation links validated."
+        },
+        {
+          "level": "local",
+          "command": "npm run harness:test",
+          "result": "passed",
+          "summary": "14 Node regression tests passed, including missing/skipped/failed evidence and snapshot identity."
+        },
+        {
+          "level": "local",
+          "command": "npm run typecheck",
+          "result": "passed",
+          "summary": "TypeScript project checks passed."
+        },
+        {
+          "level": "local",
+          "command": "npm run lint",
+          "result": "passed",
+          "summary": "ESLint passed with no reported errors."
+        },
+        {
+          "level": "local",
+          "command": "npm run test",
+          "result": "passed",
+          "summary": "34 Vitest files; 150 tests passed. Scope is local domain/component and mocked client behavior."
+        },
+        {
+          "level": "local",
+          "command": "npm run build",
+          "result": "passed",
+          "summary": "Vite production build passed. Existing roughly 3.2/3.4 MB chunks and dependency annotation warnings remain."
+        },
+        {
+          "level": "local",
+          "command": "Parse workflow YAML with js-yaml and inspect shared quality-gate dependencies",
+          "result": "passed",
+          "summary": "CI and Pages call checks.yml; Pages needs checks; both jobs use npm ci; lint/browser/functions/database commands present. SQL assertion count matches plan(24). This is static verification, not an Actions or SQL execution."
+        },
+        {
+          "level": "browser",
+          "command": "npm run test:e2e",
+          "result": "passed",
+          "summary": "2 Playwright tests passed: desktop Chromium and Pixel 7 viewport; current sign-in UI and expand/collapse intro only. No signed-in, OAuth, or gesture verification."
+        },
+        {
+          "level": "functions",
+          "command": "npm run check:functions",
+          "result": "passed",
+          "summary": "Deno checked all 5 Edge Function/shared TypeScript files. No functions, Gemini, or remote backend calls were executed."
+        }
+      ]
+    },
+    {
+      "id": "2026-10-07-harness-backend-unavailable",
+      "recorded_at": "2026-10-07T06:02:28.353Z",
+      "revision": "3691a1c45cfe8c2d56a1d33b7fbc5efd51739f40",
+      "source_snapshot": "0a05e3e20bc0960fb4997d52c20e575c3f74a3373139f4f9572c627017f8a278",
+      "worktree": [
+        " M .github/workflows/ci.yml",
+        " M .github/workflows/deploy-pages.yml",
+        " M AGENTS.md",
+        " M README.md",
+        " M docs/architecture.md",
+        " M docs/setup.md",
+        " M e2e/smoke.spec.ts",
+        " M package.json",
+        " M playwright.config.ts",
+        " M vitest.config.ts",
+        "?? .github/workflows/checks.yml",
+        "?? PROGRESS.md",
+        "?? docs/verification.md",
+        "?? e2e/README.md",
+        "?? feature_list.json",
+        "?? scripts/README.md",
+        "?? scripts/check-functions.mjs",
+        "?? scripts/validate-harness.mjs",
+        "?? scripts/validate-harness.test.mjs",
+        "?? session-handoff.md",
+        "?? src/app/README.md",
+        "?? src/features/README.md",
+        "?? src/features/auth/README.md",
+        "?? src/features/calculator/README.md",
+        "?? src/features/navigation/README.md",
+        "?? src/features/teams/README.md",
+        "?? src/lib/README.md",
+        "?? src/lib/ai/README.md",
+        "?? src/lib/pokemon/README.md",
+        "?? src/lib/supabase/README.md",
+        "?? src/styles/README.md",
+        "?? src/test/README.md",
+        "?? supabase/README.md",
+        "?? supabase/tests/"
+      ],
+      "environment": "Windows/PowerShell; installed Supabase CLI 2.117.0; Docker Linux engine/local Postgres unavailable. CI pins CLI 2.120.0.",
+      "checks": [
+        {
+          "level": "integration",
+          "command": "npm run test:db",
+          "result": "failed",
+          "summary": "CLI failed before executing any SQL assertions: local Postgres connection refused at 127.0.0.1:54322. Starting the Docker Linux engine is required."
+        }
+      ]
+    },
+    {
+      "id": "2026-10-07-continuity-restricted",
+      "recorded_at": "2026-10-07T15:03:14Z",
+      "revision": "3691a1c45cfe8c2d56a1d33b7fbc5efd51739f40",
+      "source_snapshot": "9962922cfc0b61c97b7d17bc7ab2b954ed8605abfa85b351062ca7a5248e6482",
+      "worktree": [
+        " M .github/workflows/ci.yml",
+        " M .github/workflows/deploy-pages.yml",
+        " M AGENTS.md",
+        " M README.md",
+        " M docs/architecture.md",
+        " M docs/setup.md",
+        " M e2e/smoke.spec.ts",
+        " M package.json",
+        " M playwright.config.ts",
+        " M vitest.config.ts",
+        "?? .github/workflows/checks.yml",
+        "?? PROGRESS.md",
+        "?? docs/verification.md",
+        "?? e2e/README.md",
+        "?? feature_list.json",
+        "?? scripts/README.md",
+        "?? scripts/check-functions.mjs",
+        "?? scripts/validate-harness.mjs",
+        "?? scripts/validate-harness.test.mjs",
+        "?? session-handoff.md",
+        "?? src/app/README.md",
+        "?? src/features/README.md",
+        "?? src/features/auth/README.md",
+        "?? src/features/calculator/README.md",
+        "?? src/features/navigation/README.md",
+        "?? src/features/teams/README.md",
+        "?? src/lib/README.md",
+        "?? src/lib/ai/README.md",
+        "?? src/lib/pokemon/README.md",
+        "?? src/lib/supabase/README.md",
+        "?? src/styles/README.md",
+        "?? src/test/README.md",
+        "?? supabase/README.md",
+        "?? supabase/tests/"
+      ],
+      "environment": "Windows/PowerShell; Node v24.21.0; npm 11.19.0; restricted shell. Source/worktree captured before checks. Local lint failures and esbuild configuration access failures are retained, not used as passed feature evidence.",
+      "checks": [
+        {
+          "level": "local",
+          "command": "npm run harness:test",
+          "result": "passed",
+          "summary": "26 Node regression tests passed at the captured pre-repair snapshot."
+        },
+        {
+          "level": "local",
+          "command": "npm run harness:check",
+          "result": "passed",
+          "summary": "Schema v2 and the generated handoff validated."
+        },
+        {
+          "level": "local",
+          "command": "npm run typecheck",
+          "result": "passed",
+          "summary": "TypeScript project checks passed."
+        },
+        {
+          "level": "local",
+          "command": "npm run lint",
+          "result": "failed",
+          "summary": "Two new harness typing errors: unsafe JSON.parse assignment and an untyped syncHandoff parameter. Fixed in the final run."
+        },
+        {
+          "level": "local",
+          "command": "npm run test",
+          "result": "failed",
+          "summary": "Vitest could not load config because esbuild could not read an ancestor directory in the restricted shell; no test assertions executed."
+        },
+        {
+          "level": "local",
+          "command": "npm run build",
+          "result": "failed",
+          "summary": "Vite could not load config due to the same restricted-shell directory access failure."
+        }
+      ]
+    },
+    {
+      "id": "2026-10-07-continuity-frontend-first",
+      "recorded_at": "2026-10-07T15:03:14Z",
+      "revision": "3691a1c45cfe8c2d56a1d33b7fbc5efd51739f40",
+      "source_snapshot": "9962922cfc0b61c97b7d17bc7ab2b954ed8605abfa85b351062ca7a5248e6482",
+      "worktree": [
+        " M .github/workflows/ci.yml",
+        " M .github/workflows/deploy-pages.yml",
+        " M AGENTS.md",
+        " M README.md",
+        " M docs/architecture.md",
+        " M docs/setup.md",
+        " M e2e/smoke.spec.ts",
+        " M package.json",
+        " M playwright.config.ts",
+        " M vitest.config.ts",
+        "?? .github/workflows/checks.yml",
+        "?? PROGRESS.md",
+        "?? docs/verification.md",
+        "?? e2e/README.md",
+        "?? feature_list.json",
+        "?? scripts/README.md",
+        "?? scripts/check-functions.mjs",
+        "?? scripts/validate-harness.mjs",
+        "?? scripts/validate-harness.test.mjs",
+        "?? session-handoff.md",
+        "?? src/app/README.md",
+        "?? src/features/README.md",
+        "?? src/features/auth/README.md",
+        "?? src/features/calculator/README.md",
+        "?? src/features/navigation/README.md",
+        "?? src/features/teams/README.md",
+        "?? src/lib/README.md",
+        "?? src/lib/ai/README.md",
+        "?? src/lib/pokemon/README.md",
+        "?? src/lib/supabase/README.md",
+        "?? src/styles/README.md",
+        "?? src/test/README.md",
+        "?? supabase/README.md",
+        "?? supabase/tests/"
+      ],
+      "environment": "Windows/PowerShell; Node v24.21.0; Vitest 3.2.7; Vite 7.3.6. Application tests/build ran outside the restricted shell. Captured snapshot precedes a harness-only stdout newline repair during the run; application sources remained unchanged. Later final run records the stable repaired snapshot.",
+      "checks": [
+        {
+          "level": "local",
+          "command": "npm run test",
+          "result": "failed",
+          "summary": "34 files executed; 32 passed and 2 failed; 148/150 tests passed. UI expectation failures included ProfilePage's Rain team button lookup. Full rerun with maxWorkers=2 passed without application/test-source changes; concurrency sensitivity remains a CI concern."
+        },
+        {
+          "level": "local",
+          "command": "npm run build",
+          "result": "passed",
+          "summary": "Production build passed; existing 3.2/3.4 MB chunk and dependency annotation warnings remain."
+        }
+      ]
+    },
+    {
+      "id": "2026-10-07-continuity-intermediate",
+      "recorded_at": "2026-10-07T15:03:14Z",
+      "revision": "3691a1c45cfe8c2d56a1d33b7fbc5efd51739f40",
+      "source_snapshot": "4811081709fd5cc3adc4accb91663f4ad5485d4116c8aeae774f0bcb67a7696f",
+      "worktree": [
+        " M .github/workflows/ci.yml",
+        " M .github/workflows/deploy-pages.yml",
+        " M AGENTS.md",
+        " M README.md",
+        " M docs/architecture.md",
+        " M docs/setup.md",
+        " M e2e/smoke.spec.ts",
+        " M package.json",
+        " M playwright.config.ts",
+        " M vitest.config.ts",
+        "?? .github/workflows/checks.yml",
+        "?? PROGRESS.md",
+        "?? docs/verification.md",
+        "?? e2e/README.md",
+        "?? feature_list.json",
+        "?? scripts/README.md",
+        "?? scripts/check-functions.mjs",
+        "?? scripts/validate-harness.mjs",
+        "?? scripts/validate-harness.test.mjs",
+        "?? session-handoff.md",
+        "?? src/app/README.md",
+        "?? src/features/README.md",
+        "?? src/features/auth/README.md",
+        "?? src/features/calculator/README.md",
+        "?? src/features/navigation/README.md",
+        "?? src/features/teams/README.md",
+        "?? src/lib/README.md",
+        "?? src/lib/ai/README.md",
+        "?? src/lib/pokemon/README.md",
+        "?? src/lib/supabase/README.md",
+        "?? src/styles/README.md",
+        "?? src/test/README.md",
+        "?? supabase/README.md",
+        "?? supabase/tests/"
+      ],
+      "environment": "Windows/PowerShell; Node v24.21.0; npm 11.19.0; captured after the handoff stdout newline repair and before JSDoc typing repairs.",
+      "checks": [
+        {
+          "level": "local",
+          "command": "npm run harness:test",
+          "result": "passed",
+          "summary": "26 Node tests passed, including CLI read-only regeneration with empty context."
+        },
+        {
+          "level": "local",
+          "command": "npm run harness:check",
+          "result": "passed",
+          "summary": "Schema v2 records and handoff consistency passed."
+        },
+        {
+          "level": "local",
+          "command": "npm run typecheck",
+          "result": "passed",
+          "summary": "TypeScript project checks passed."
+        },
+        {
+          "level": "local",
+          "command": "npm run lint",
+          "result": "failed",
+          "summary": "Repeated the same two unsafe any errors before adding explicit JSDoc types; final run passed."
+        }
+      ]
+    },
+    {
+      "id": "2026-10-07-continuity-local",
+      "recorded_at": "2026-10-07T15:03:14Z",
+      "revision": "3691a1c45cfe8c2d56a1d33b7fbc5efd51739f40",
+      "source_snapshot": "73acbc19d9eb4976b10d4953dacc19da8d4effeab37c024fd5f658ffc6439437",
+      "worktree": [
+        " M .github/workflows/ci.yml",
+        " M .github/workflows/deploy-pages.yml",
+        " M AGENTS.md",
+        " M README.md",
+        " M docs/architecture.md",
+        " M docs/setup.md",
+        " M e2e/smoke.spec.ts",
+        " M package.json",
+        " M playwright.config.ts",
+        " M vitest.config.ts",
+        "?? .github/workflows/checks.yml",
+        "?? PROGRESS.md",
+        "?? docs/verification.md",
+        "?? e2e/README.md",
+        "?? feature_list.json",
+        "?? scripts/README.md",
+        "?? scripts/check-functions.mjs",
+        "?? scripts/validate-harness.mjs",
+        "?? scripts/validate-harness.test.mjs",
+        "?? session-handoff.md",
+        "?? src/app/README.md",
+        "?? src/features/README.md",
+        "?? src/features/auth/README.md",
+        "?? src/features/calculator/README.md",
+        "?? src/features/navigation/README.md",
+        "?? src/features/teams/README.md",
+        "?? src/lib/README.md",
+        "?? src/lib/ai/README.md",
+        "?? src/lib/pokemon/README.md",
+        "?? src/lib/supabase/README.md",
+        "?? src/styles/README.md",
+        "?? src/test/README.md",
+        "?? supabase/README.md",
+        "?? supabase/tests/"
+      ],
+      "environment": "Windows/PowerShell; Node v24.21.0; npm 11.19.0; Vitest 3.2.7; Vite 7.3.6. Unit tests/build outside restricted shell; full Vitest suite limited to 2 workers after UI failures at default concurrency. No app/SQL/function/browser/workflow source changed in this audit. CI Node 22, Docker/pgTAP, hosted services and remote Actions were not executed.",
+      "checks": [
+        {
+          "level": "local",
+          "command": "npm run harness:test",
+          "result": "passed",
+          "summary": "26 Node regression tests passed, including per-step evidence, resumable actions, handoff drift, report ordering and CLI read-only generation."
+        },
+        {
+          "level": "local",
+          "command": "npm run harness:check",
+          "result": "passed",
+          "summary": "Schema version 2, references, paths and generated handoff validated."
+        },
+        {
+          "level": "local",
+          "command": "npm run typecheck",
+          "result": "passed",
+          "summary": "TypeScript project checks passed."
+        },
+        {
+          "level": "local",
+          "command": "npm run lint",
+          "result": "passed",
+          "summary": "ESLint passed after typing the new JSON input and handoff test helper."
+        },
+        {
+          "level": "local",
+          "command": "npm run test -- --maxWorkers=2",
+          "result": "passed",
+          "summary": "All 34 Vitest files and all 150 unit/component tests passed; client integration calls remain mocked."
+        },
+        {
+          "level": "local",
+          "command": "npm run build",
+          "result": "passed",
+          "summary": "Production build passed at the repaired snapshot. Existing dependency annotation and 3.2/3.4 MB chunk warnings remain."
+        },
+        {
+          "level": "local",
+          "command": "npm run harness:report",
+          "result": "passed",
+          "summary": "Read-only CLI printed validated feature counts, continuation, per-step progress, required-level gaps and run history. CLI regression also verified failure on stale handoff and output-only regeneration."
+        }
+      ]
+    }
+  ],
+  "continuation": {
+    "feature_id": "harness-001",
+    "updated_at": "2026-10-07T15:03:14Z",
+    "summary": "Review the existing harness for consistent progress reporting and safe continuation across sessions. Application behavior and pre-existing work are preserved; AGENTS.md is reviewed without editing it.",
+    "next_action": "Start a working Docker Linux engine, capture npm run harness:snapshot, run supabase db start and npm run test:db on a disposable local database, and append the actual integration/acceptance results. Close harness-001 and backend-001 only after their required checks and steps pass; do not reset existing local data without confirming it can be discarded.",
+    "blockers": [
+      "The earlier integration run failed before SQL assertions because Docker Linux engine/local Postgres was unavailable; availability has not been rechecked in this audit."
+    ],
+    "changed_files": [
+      "scripts/validate-harness.mjs",
+      "scripts/validate-harness.test.mjs",
+      "scripts/README.md",
+      "package.json",
+      "feature_list.json",
+      "session-handoff.md",
+      "docs/verification.md",
+      "PROGRESS.md",
+      "README.md"
+    ],
+    "run_ids": [
+      "2026-10-07-continuity-local",
+      "2026-10-07-continuity-restricted",
+      "2026-10-07-continuity-frontend-first",
+      "2026-10-07-continuity-intermediate",
+      "2026-10-07-harness-local",
+      "2026-10-07-harness-backend-unavailable"
+    ],
+    "context": [
+      "Current audit: 26 harness regressions, typecheck, lint, all 150 Vitest tests (34 files; maxWorkers=2), build and progress reporting passed. Production chunks still warn at about 3.2/3.4 MB. Failed attempts remain in verification_runs.",
+      "Initial default-concurrency full-suite run had 2 UI test failures (148/150 passed). The full rerun with two workers passed without application/test-source edits; CI still uses its original default command, so concurrency sensitivity is not proven resolved.",
+      "An early new test fixture omitted the linked feature_list.json and failed 5/25 harness tests; adding the fixture file repaired it. No exact pre-run snapshot was captured for that development attempt, so it is retained as troubleshooting prose rather than identified passing evidence.",
+      "Browser/function verification remains the historical run 2026-10-07-harness-local; it was not rerun in this audit. Signed-in/mobile gestures, live OAuth/provider settings, production migrations and remote Actions remain unverified.",
+      "The checkout was already dirty with harness/documentation/workflow changes at startup. Preserve them; this audit only edited the changed paths listed above. No commit, push or hosted change was requested.",
+      "AGENTS.md was reviewed without edits. Optional instruction clarifications and the schema/continuation protocol are in docs/verification.md. The global prohibition on compiling .cpp files remains applicable.",
+      "After the harness database requirement passes, continue quality-001 signed-in/mobile browser coverage; the user request and saved continuation take precedence over silently selecting another backlog item."
+    ]
+  }
+}

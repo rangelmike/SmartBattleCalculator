@@ -1,11 +1,27 @@
 # Setup Guide
 
-## Accounts to create
+## Prerequisites
+
+- Node.js 22 and npm (matching CI), plus a Supabase project and a Google OAuth Web client for signed-in flows.
+- Supabase CLI and Docker only if running the database and Edge Functions locally. A remote Supabase project can be used instead.
+- A Google AI Studio API key only if deliberately deploying the dormant `suggest-team` function; the active calculator does not require Gemini.
+
+From the repository root on PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+npm ci
+npm run dev
+```
+
+For macOS/Linux, copy with `cp .env.example .env.local`. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env.local` to the URL and public anon/publishable key of the Supabase environment you intend to use. Vite normally serves `http://localhost:5173/`; use the URL it prints if the port changes, and allowlist that exact OAuth return URL. Without public Supabase configuration, the UI cannot sign in. Do not set real server secrets unless running the relevant local Edge Function, and never prefix them with `VITE_`.
+
+## External accounts
 
 1. GitHub repository.
 2. Supabase project.
-3. Google AI Studio API key for Gemini.
-4. GitHub Pages enabled for the repository.
+3. Google Auth Platform OAuth client.
+4. GitHub Pages enabled for the repository when deploying.
 
 ## Supabase
 
@@ -28,11 +44,13 @@
    supabase db push
    ```
 
-5. Add secrets:
+5. Only when deploying `suggest-team`, add its secrets:
 
    ```bash
    supabase secrets set GEMINI_API_KEY=your_key GEMINI_MODEL=gemini-3.1-flash-lite
    ```
+
+For a fully local database, run `supabase start` and then `supabase db reset` only against that local instance. Reset recreates local data. With a remote project, review migrations before `supabase db push`; use a separate test project for integration checks. The repository does not encode hosted Auth provider settings or prove remote migrations were applied. See [Backend](../supabase/README.md).
 
 ## Google-only authentication
 
@@ -49,11 +67,10 @@
 2. Open **Settings > Secrets and variables > Actions > Variables** and create these repository variables:
    - `VITE_SUPABASE_URL`: your Supabase Project URL;
    - `VITE_SUPABASE_ANON_KEY`: your Supabase publishable/anon key.
-3. Push to `main`, or run **Actions > Deploy to GitHub Pages > Run workflow**. The workflow checks types and tests, builds with `GITHUB_PAGES=true`, and publishes `dist`.
+3. Push to `main`, or run **Actions > Deploy to GitHub Pages > Run workflow**. Both paths first run the shared harness/frontend/browser/backend quality checks. Only after they pass does the deployment build with `GITHUB_PAGES=true` and publish `dist`. See [Verification](verification.md) for exactly what these checks cover and what remains external.
 4. Check the deployment at `https://rangelmike.github.io/SmartBattleCalculator/`. If you rename the repository or use a custom domain, update the `base` setting in `vite.config.ts`.
 5. In Supabase **Authentication > URL Configuration**, set **Site URL** to `https://rangelmike.github.io/SmartBattleCalculator/` and add that URL and `http://localhost:5173/` to **Redirect URLs**. Add other origins only if you actually use them.
 
 The two `VITE_` values are public browser configuration, not server secrets. Keep `GEMINI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` out of GitHub Pages variables and the frontend. GitHub Pages hosts only static files; Supabase hosts Auth, the database, and Edge Functions.
 
-Keep the repo connected to Codex. The project `AGENTS.md` explains the architecture and guardrails
-so future tasks follow the same structure.
+For development and release checks, use [Verification](verification.md). For current implementation status, use [Progress](../PROGRESS.md).
