@@ -1,11 +1,10 @@
 # Setup Guide
 
-## Accounts to create
+## Local development
 
-1. GitHub repository.
-2. Supabase project.
-3. Google AI Studio API key for Gemini.
-4. GitHub Pages enabled for the repository.
+Use Node.js 22, `npm ci`, and `npm run dev`. Copy `.env.example` to `.env.local` (`Copy-Item .env.example .env.local` in PowerShell), then set the public `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` values from a Supabase project. Google OAuth must allow the exact Vite URL printed by the dev server. Without Supabase, the signed-out screen can render but sign-in will not work.
+
+The Supabase CLI and Docker are needed only to run the database/Edge Functions locally. `supabase start` starts the local stack; `supabase db reset` recreates its local database, so do not use it against data you need to keep. A Google AI Studio key is only relevant to the currently unconnected `suggest-team` Edge Function; the active calculator does not require Gemini.
 
 ## Supabase
 
@@ -22,13 +21,13 @@
    supabase link --project-ref YOUR_PROJECT_REF
    ```
 
-4. Push schema:
+4. Review the additive migrations in `supabase/migrations`, then push schema to the intended linked project:
 
    ```bash
    supabase db push
    ```
 
-5. Add secrets:
+5. Only if deploying `suggest-team`, add its secrets:
 
    ```bash
    supabase secrets set GEMINI_API_KEY=your_key GEMINI_MODEL=gemini-3.1-flash-lite
@@ -55,5 +54,4 @@
 
 The two `VITE_` values are public browser configuration, not server secrets. Keep `GEMINI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` out of GitHub Pages variables and the frontend. GitHub Pages hosts only static files; Supabase hosts Auth, the database, and Edge Functions.
 
-Keep the repo connected to Codex. The project `AGENTS.md` explains the architecture and guardrails
-so future tasks follow the same structure.
+The repository cannot verify hosted OAuth provider settings, applied remote migrations, or live RLS behavior. Use a separate test project for integration checks and record their outcome in [progress](../PROGRESS.md).

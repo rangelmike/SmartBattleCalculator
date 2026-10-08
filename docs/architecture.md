@@ -1,96 +1,26 @@
 # Architecture
 
-## Goals
+## Boundaries
 
-Build a free-first Pokemon VGC damage calculator with:
+Smart Battle Calculator is a static React/TypeScript SPA built by Vite. `src/app/App.tsx` restores a Supabase session, renders `AuthPage` when signed out, and selects Calculator or Profile by URL hash. GitHub Pages serves only `dist`; Supabase supplies Auth, Postgres/PostgREST, RPCs, and optional Edge Functions.
 
-- fast manual damage calculations;
-- profiles and saved teams;
-- Pokepaste/Showdown import;
-- AI suggestions that choose 4 Pokemon and lead order in under 20 seconds.
+| Layer                                       | Owns                                                          | Read when changing                                |
+| ------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------- |
+| `src/features/*`                            | User-visible React workflows and state                        | [UI map](../src/features/README.md)               |
+| `src/lib/pokemon/*`                         | Champions data, parsing, validation, stats, damage, estimates | [Pokemon contracts](../src/lib/pokemon/README.md) |
+| `src/lib/supabase/*`                        | Browser Auth and database queries                             | [Client contracts](../src/lib/supabase/README.md) |
+| `supabase/migrations`, `supabase/functions` | Schema, RLS, RPCs, server-side integrations                   | [Backend contracts](../supabase/README.md)        |
 
-## Core principle
+Put reusable mechanics below the UI, and keep service-role/Gemini calls out of the browser. `src/lib/ai/suggestion-schema.ts` and `supabase/functions/suggest-team` are groundwork only: there is no active recommendation screen or client call. The current Edge Function's empty fallback is not a completed deterministic recommendation.
 
-The app should not depend on AI for correctness. The deterministic engine parses teams,
-normalizes Pokemon data, calculates matchup signals, and produces a fallback recommendation.
-Gemini only turns that compact analysis into a final recommendation and explanation.
+## User flows
 
-## Recommended directory ownership
+1. `src/features/auth/AuthPage.tsx` offers Google OAuth. `src/lib/supabase/auth.ts` restores the session and reads/updates `profiles`. Legacy email/password helpers remain in that module but are not exposed in the visible UI. Google-only enforcement at the API level depends on Supabase provider settings; the repository cannot prove remote configuration.
+2. `src/features/teams/ProfilePage.tsx` imports Showdown text or fetches Pokepaste `/raw` in the browser, then uses `@pkmn/sets` and Champions validation before saving. Manual editing, ordering, searching, and viewing live in the same feature folder. `teams` stores personal team JSON/paste/hash; `team_collections` records own/opponent membership. Saving to own also adds an opponent membership.
+3. `popular_teams` is separate from personal teams. Authenticated clients search it through bounded RPC pages. The database `is_popular_team_admin()` RLS policy, not React, controls writes by the verified designated account. A trigger refreshes `popular_pokemon_common_sets` only for species affected by a Popular team change; individual calculator picks read one common set or use a deterministic default.
+4. `src/features/calculator/CalculatorWorkspace.tsx` loads teams or individual Pokemon. `@smogon/calc` generation 0 calculates level-50 Champions damage. Field, form/ability, stages, HP, recoil/healing, and recorded observations affect results and opponent estimates. Own damage is recorded as percent dealt; opponent damage as HP lost.
+5. A per-user calculator session stores rosters, field, and durable observations in browser `localStorage`. Current HP and stat stages are temporary React state: they survive switching selected Pokemon but not calculator exit or New battle. Reset stats clears the selected Pokemon's temporary changes; New battle keeps My Team but clears opponent, field, and observations.
 
-```text
-src/
-  app/                    App shell and global providers
-  components/             Shared UI components
-  features/
-    calculator/           Damage calculator screens and state
-    teams/                Team library, import, editor
-    ai-suggestions/       Matchup selector and recommendation UI
-    auth/                 Login and profile flows
-  lib/
-    pokemon/              Parse, normalize, damage, matchup scoring
-    supabase/             Supabase client and generated DB types
-    ai/                   Shared schemas for Edge Function responses
-  styles/                 Tailwind global CSS
-supabase/
-  migrations/             Database schema and RLS
-  functions/              Server-only logic and external API calls
-docs/                     Architecture and operating notes
-```
+## Deployment and verification boundary
 
-## Data model
-
-- `profiles`: one row per auth user.
-- `teams`: saved teams, raw paste text, normalized JSON and stable hash.
-- `popular_teams`: shared, Champions-validated teams with a searchable species list. Authenticated readers use bounded server-side search and suggestion RPCs; only the verified designated administrator can write under RLS.
-- `popular_pokemon_common_sets`: one materialized usage summary per species (four most-used moves, modal item, ability, full EV spread and nature). A database trigger refreshes only species touched by a popular-team insert, edit or delete; an additive migration backfills existing teams.
-- `ai_recommendation_cache`: cached Gemini/heuristic responses by team hash pair.
-- `usage_events`: optional lightweight telemetry for imports and AI calls.
-
-## AI flow
-
-1. User selects own team and opponent team.
-2. Client calls `suggest-team` Edge Function.
-3. Function checks cache by `(format, own_team_hash, opponent_team_hash, model)`.
-4. If cache misses, it computes or receives deterministic matchup summaries.
-5. Gemini returns strict JSON matching `aiSuggestionSchema`.
-6. Function validates JSON, stores cache, and returns it.
-7. If Gemini times out or fails, return deterministic fallback with `fallbackUsed: true`.
-
-## Calculator flow
-
-- The calculator uses `@smogon/calc` generation 0 (Champions) for level-50 damage, field modifiers, hit rolls and KO descriptions. Battle form, temporary type, current HP and critical-hit state are kept separate from the saved base set.
-- My Team reads the user's own collection; Opponent Team reads the rival collection and can search paginated popular teams. Individual Pokemon use their materialized popular set when available.
-- Calculator rosters, field conditions and recorded damage (own attacks in percent, opponent attacks in HP) are stored locally per user until New battle. A bounded candidate search scores opponent EV spreads and natures against damage dealt and received by known Pokemon; manual edits can override its result.
-- Battle stat stages are held only in calculator memory per Pokemon. They survive roster selection changes, affect `@smogon/calc` results, and are cleared on Reset stats, New battle or calculator exit; boosted observations are not persisted across exits.
-- Current HP uses the same temporary lifetime per Pokemon. Its numeric field and draggable HP bar share one in-memory value; observations made under temporary HP do not persist across calculator exits.
-- Saving from My Team writes to own and opponent collections. Saving from Opponent Team writes only to the opponent collection.
-
-## Deployment
-
-- GitHub Pages:
-  - `.github/workflows/deploy-pages.yml` builds with `npm run build` and publishes `dist` on pushes to `main`;
-  - the Vite production base is `/SmartBattleCalculator/`, matching the repository's Pages URL;
-  - GitHub Actions repository variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are embedded in the frontend build;
-  - the browser uses hash navigation, so no server-side route fallback is needed.
-- Supabase:
-  - apply migrations;
-  - configure the GitHub Pages URL for Auth redirects;
-  - deploy Edge Functions and set their secrets: `GEMINI_API_KEY`, `GEMINI_MODEL`.
-
-GitHub Pages serves static files only. Supabase handles authentication, data, and server-side AI calls.
-
-## Security rules
-
-- Browser uses only Supabase anon key.
-- Service role key stays in Supabase Edge Functions or trusted scripts.
-- RLS owns access control for user data.
-- Public teams can be read by everyone; private teams only by owner.
-- Popular teams are separate from personal collections: every authenticated user can read them, while inserts, edits, and deletes require the designated account's verified email and matching user ID.
-- AI endpoints require authenticated users.
-
-## Cost controls
-
-- Cache AI results by team hashes.
-- Keep prompts compact.
-- Add per-user daily AI limits before public launch.
-- Make deterministic fallback good enough for free-tier outages.
+`vite.config.ts` uses `/SmartBattleCalculator/` when `GITHUB_PAGES=true`; hash navigation avoids server route rewrites. `.github/workflows/ci.yml` runs lint, tests, and build; `.github/workflows/deploy-pages.yml` builds and publishes `dist` from `main`. GitHub Actions injects only public `VITE_SUPABASE_*` values. Schema/RLS changes require additive migrations and a real database check; local mocked tests alone cannot establish hosted permissions. See [setup](setup.md) and [progress](../PROGRESS.md).
