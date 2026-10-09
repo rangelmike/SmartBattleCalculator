@@ -17,13 +17,10 @@ On macOS/Linux, use `cp .env.example .env.local`. Set `VITE_SUPABASE_URL` and `V
 ## Verify
 
 ```powershell
-npm run typecheck
-npm run lint
-npm run test
-npm run build
+npm run verify
 ```
 
-For a focused change, run `npm run test -- <test-file>` as well as typecheck. `npm run test:e2e` uses Playwright and starts Vite, but its current smoke assertion is stale; see [progress](PROGRESS.md) before relying on it. Mocked tests do not verify live Google OAuth or database RLS.
+For schema, Auth, team storage, calculator or deployment changes, use `npm run verify:full`. Read [verification](docs/verification.md) for browser/Docker/Supabase prerequisites, isolated test data and the external OAuth/deployment check. Run focused tests while developing; review and record failures in [verification failures](docs/verification-failures.md). `npm run test:e2e` uses a production build on port 4173; the unified commands build it first. Local success does not establish hosted Google OAuth or deployment health.
 
 ## Find your way
 

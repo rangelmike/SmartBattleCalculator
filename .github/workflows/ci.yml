@@ -7,14 +7,4 @@ on:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm install
-      - run: npm run lint
-      - run: npm run test
-      - run: npm run build
+    uses: ./.github/workflows/verification.yml

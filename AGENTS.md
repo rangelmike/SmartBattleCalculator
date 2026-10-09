@@ -9,7 +9,7 @@ Smart Battle Calculator is a React/TypeScript Pokemon Champions damage calculato
 ## Startup Workflow
 
 1. Read `PROGRESS.md`, check `git status --short`, and inspect the latest request. Existing changes belong to the user unless proven otherwise; do not reset them.
-2. Follow `README.md` for setup and checks. Read the relevant module README and source/tests before deciding where to edit. If status docs conflict with code, verify the code and repair the stale claim.
+2. Follow `README.md` for setup and `docs/verification.md` for checks; review open entries in `docs/verification-failures.md`. Read the relevant module README and source/tests before deciding where to edit. If status docs conflict with code, verify the code and repair the stale claim.
 3. Pick the smallest coherent task requested by the user. Do not start unrelated backlog work merely because `PROGRESS.md` lists it. Note any baseline failure before changing code.
 
 ## Working Rules
@@ -29,6 +29,6 @@ Smart Battle Calculator is a React/TypeScript Pokemon Champions damage calculato
 
 ## Definition Of Done
 
-- The requested behavior is complete within scope; run `npm run typecheck` and relevant tests when dependencies are installed. Use lint/build and browser or Supabase integration checks when the change crosses those boundaries.
-- Review the diff and runtime evidence. Passing mocked tests does not prove hosted OAuth, RLS, or deployment. Record checks that could not run and why.
+- The requested behavior is complete within scope; run relevant focused tests while developing and, after the final edit, `npm run verify`. Run `npm run verify:full` instead for schema, Auth, team storage, calculator, or deployment changes. Follow `docs/verification.md` for prerequisites and scope; `verify:backend` alone is not an acceptance check.
+- Stop on a failed check, investigate it, record the cause and rerun evidence in `docs/verification-failures.md`, and rerun the complete applicable command after a fix. If blocked, leave the failure open, update `PROGRESS.md`, and tell the user. Review the diff and runtime evidence; passing local tests does not prove hosted OAuth or deployment, which require the documented external check.
 - Leave a clean handoff: update `PROGRESS.md` for material changes or incomplete work, name unresolved risks and the next action, and avoid claiming a remote state that was not checked. Keep the startup path in `README.md` usable.

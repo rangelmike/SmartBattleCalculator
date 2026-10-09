@@ -15,7 +15,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  checks:
+    uses: ./.github/workflows/verification.yml
   deploy:
+    needs: checks
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -27,8 +30,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run typecheck
-      - run: npm run test
       - name: Check public Supabase configuration
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}

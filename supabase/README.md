@@ -7,3 +7,5 @@ RLS limits personal writes to `auth.uid()`; `teams` also permits reads of rows e
 `functions/import-pokepaste` exists but the current UI fetches Pokepaste `/raw` directly. `functions/validate-signup-email` is legacy; the visible UI signs in with Google. `functions/suggest-team` is unfinished groundwork: no UI caller, and its empty fallback is not a useful recommendation. Only Edge Functions may use Gemini or service-role credentials.
 
 Before `supabase db push`, review the linked project and migration diff. `supabase db reset` recreates the local database and can destroy local test data. Frontend mocks do not prove remote RLS, triggers, OAuth provider settings, or deployed functions; verify those in a disposable Supabase project.
+
+`tests/database/access.test.sql` checks actual RLS, RPCs and common-set triggers under separate database roles. `npm run verify:backend` runs it in an isolated disposable local stack; use `npm run verify:full` for acceptance including browser storage/calculator flows. See [verification](../docs/verification.md) for prerequisites and the external hosted check.
