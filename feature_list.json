@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "project": "Smart Battle Calculator",
+  "updated_at": "2026-10-22",
+  "scope": "Main product capabilities supported by repository evidence, not individual fixes or an exhaustive UI inventory. Hypothetical enhancements are not an approved backlog.",
+  "status_definitions": {
+    "pass": "Implemented with local test evidence. Does not establish hosted OAuth, remote database configuration or deployment health.",
+    "in-progress": "Partial implementation exists, but the feature is not complete or available to users.",
+    "not-started": "An explicitly scoped future feature with no implementation yet. No such features are currently recorded here."
+  },
+  "verification": {
+    "guide": "docs/verification.md",
+    "last_recorded_full_run": {
+      "date": "2026-10-08",
+      "command": "npm run verify:full",
+      "result": "150 unit/component tests, 57 SQL assertions and 4 desktop/mobile browser cases passed, plus typecheck, lint and production build.",
+      "evidence": ["PROGRESS.md", "docs/verification-failures.md"]
+    },
+    "external_checks": "Hosted Google OAuth, remote permissions/migrations, live Pokepaste and deployed Pages remain unverified. Use the external acceptance procedure in the verification guide."
+  },
+  "features": [
+    {
+      "id": "SBC-001",
+      "name": "Google sign-in and user profile",
+      "description": "Enter through Google OAuth, restore the Supabase session, update the profile username and sign out, with recoverable sign-in errors.",
+      "status": "pass",
+      "evidence": {
+        "implementation": [
+          "src/features/auth/AuthPage.tsx",
+          "src/lib/supabase/auth.ts",
+          "src/features/teams/ProfilePage.tsx"
+        ],
+        "tests": [
+          "src/features/auth/AuthPage.test.tsx",
+          "src/lib/supabase/auth.test.ts",
+          "e2e/signed-in.spec.ts"
+        ]
+      },
+      "limits": [
+        "Browser integration uses a local password-session fixture; real Google OAuth and Google-only API enforcement require external verification."
+      ]
+    },
+    {
+      "id": "SBC-002",
+      "name": "Personal own and opponent team libraries",
+      "description": "Save, view, search, edit and delete teams with source labels in My teams and Opponents, with database ownership isolation. Saving an own team also adds it to Opponents.",
+      "status": "pass",
+      "evidence": {
+        "implementation": [
+          "src/features/teams/ProfilePage.tsx",
+          "src/lib/supabase/teams.ts",
+          "supabase/migrations/20260922001000_team_collections.sql"
+        ],
+        "tests": [
+          "src/lib/pokemon/team-import.test.ts",
+          "src/lib/pokemon/team-search.test.ts",
+          "supabase/tests/database/access.test.sql",
+          "e2e/signed-in.spec.ts"
+        ]
+      },
+      "limits": [
+        "Personal searches still assemble the entire library in the client; source labels are not folders."
+      ]
+    },
+    {
+      "id": "SBC-003",
+      "name": "Showdown and Pokepaste team import",
+      "description": "Import pasted Showdown team text or a Pokepaste link, parse sets and validate Champions species, moves, abilities, items, natures, level and stat-point limits before saving.",
+      "status": "pass",
+      "evidence": {
+        "implementation": [
+          "src/lib/pokemon/team-import.ts",
+          "src/lib/pokemon/showdown-parser.ts",
+          "src/lib/pokemon/team-validation.ts",
+          "src/lib/pokemon/champions-data.ts"
+        ],
+        "tests": [
+          "src/lib/pokemon/team-import.test.ts",
+          "src/lib/pokemon/showdown-parser.test.ts",
+          "src/lib/pokemon/team-validation.test.ts",
+          "src/lib/pokemon/champions-data.test.ts",
+          "e2e/signed-in.spec.ts"
+        ]
+      },
+      "limits": [
+        "Pokepaste fetch tests use fixtures; live service availability needs an external check. Supported data is Champions-specific."
+      ]
+    },
+    {
+      "id": "SBC-004",
+      "name": "Manual team building and set editing",
+      "description": "Create or edit teams, add/remove/reorder members, change legal sets and stat spreads, and view level-50/base stats and regular or Mega forms.",
+      "status": "pass",
+      "evidence": {
+        "implementation": [
+          "src/features/teams/TeamEditorDialog.tsx",
+          "src/features/teams/TeamViewer.tsx",
+          "src/lib/pokemon/team-stats.ts",
+          "src/lib/pokemon/team-order.ts"
+        ],
+        "tests": [
+          "src/features/teams/TeamEditorDialog.test.tsx",
+          "src/features/teams/TeamViewer.test.tsx",
+          "src/lib/pokemon/team-stats.test.ts",
+          "src/lib/pokemon/team-order.test.ts"
+        ]
+      },
+      "limits": [
+        "Sets are saved as members of teams; there is no separate personal library of individual sets."
+      ]
+    },
+    {
+      "id": "SBC-005",
+      "name": "Popular team catalog and administration",
+      "description": "Browse and load Popular teams with paginated source/name/species search and suggestions. The designated confirmed administrator manages the catalog under database RLS.",
+      "status": "pass",
+      "evidence": {
+        "implementation": [
+          "src/features/teams/ProfilePage.tsx",
+          "src/lib/supabase/popular-teams.ts",
+          "src/features/calculator/CalculatorTeamPicker.tsx",
+          "supabase/migrations/20260922002000_popular_teams.sql"
+        ],
+        "tests": [
+          "src/features/teams/ProfilePage.test.tsx",
+          "src/features/calculator/CalculatorTeamPicker.test.tsx",
+          "src/lib/supabase/popular-teams.test.ts",
+          "supabase/tests/database/access.test.sql"
+        ]
+      },
+      "limits": [
+        "Real RLS/RPC checks cover the disposable local stack; hosted configuration has not been verified."
+      ]
+    },
+    {
+      "id": "SBC-006",
+      "name": "Champions damage calculator and battle workspace",
+      "description": "Load own/opponent rosters and calculate damage ranges, rolls, KO projections and HP effects using @smogon/calc generation 0. Adjust forms, abilities, field conditions, HP and stages; restore the per-user workspace and start a new battle on desktop or mobile.",
+      "status": "pass",
+      "evidence": {
+        "implementation": [
+          "src/features/calculator/CalculatorWorkspace.tsx",
+          "src/features/calculator/DamageOverview.tsx",
+          "src/lib/pokemon/damage-calculation.ts",
+          "src/lib/pokemon/calculator-session.ts"
+        ],
+        "tests": [
+          "src/lib/pokemon/damage-calculation.test.ts",
+          "src/lib/pokemon/calculator-session.test.ts",
+          "src/features/calculator/CalculatorTeamPanel.test.tsx",
+          "src/features/calculator/CalculatorPanelCarousel.test.tsx",
+          "e2e/signed-in.spec.ts"
+        ]
+      },
+      "limits": [
+        "Current calculations select one attacker and one defender, not a combined attack from two Pokemon. HP and stages are temporary; New battle keeps My Team and clears opponents, field and observations."
+      ]
+    },
+    {
+      "id": "SBC-007",
+      "name": "Opponent set estimation from observed damage",
+      "description": "Record damage dealt as percent and damage received as HP, fit opponent spreads against observations, and compare estimates with bulky, fast or offensive presets.",
+      "status": "pass",
+      "evidence": {
+        "implementation": [
+          "src/features/calculator/DamageOverview.tsx",
+          "src/lib/pokemon/damage-observations.ts",
+          "src/features/calculator/CalculatorWorkspace.tsx"
+        ],
+        "tests": [
+          "src/lib/pokemon/damage-observations.test.ts",
+          "src/features/calculator/DamageOverview.test.tsx",
+          "src/lib/pokemon/calculator-session.test.ts"
+        ]
+      },
+      "limits": [
+        "An estimate is a fitted candidate, not proof of the opponent's actual set. Observations using temporary HP/stages are not persisted."
+      ]
+    },
+    {
+      "id": "SBC-008",
+      "name": "Individual Pokemon loading with common sets",
+      "description": "Search and add one or several Pokemon to a calculator roster using per-species common sets derived from Popular teams, with a deterministic legal default when no common set is available.",
+      "status": "pass",
+      "evidence": {
+        "implementation": [
+          "src/features/calculator/CalculatorTeamPicker.tsx",
+          "src/lib/pokemon/individual-set.ts",
+          "src/lib/supabase/popular-common-sets.ts",
+          "supabase/migrations/20260922003000_popular_pokemon_common_sets.sql"
+        ],
+        "tests": [
+          "src/features/calculator/CalculatorWorkspace.test.tsx",
+          "src/lib/pokemon/individual-set.test.ts",
+          "src/lib/supabase/popular-common-sets.test.ts",
+          "supabase/tests/database/access.test.sql"
+        ]
+      },
+      "limits": [
+        "Common sets summarize the catalog; adding a Pokemon to the calculator does not save an individual personal set."
+      ]
+    },
+    {
+      "id": "SBC-009",
+      "name": "AI-assisted team selection",
+      "description": "Existing groundwork for selecting four Pokemon and lead order from a matchup summary through a server-side Gemini request and cache.",
+      "status": "in-progress",
+      "evidence": {
+        "implementation": [
+          "supabase/functions/suggest-team/index.ts",
+          "src/lib/ai/suggestion-schema.ts",
+          "supabase/migrations/20260922000000_initial_schema.sql"
+        ],
+        "tests": []
+      },
+      "limits": [
+        "No UI/client caller is wired up. The response schema is not applied by the Edge Function, the fallback returns no selected Pokemon, and automated recommendation acceptance coverage is absent. Not a shipped feature."
+      ]
+    }
+  ]
+}

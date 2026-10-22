@@ -14,12 +14,24 @@ Smart Battle Calculator is a React/TypeScript Pokemon Champions damage calculato
 
 ## Working Rules
 
-- Do not compile `.cpp` files in any way unless the user explicitly overrides this global preference.
 - Do not modify `AGENTS.md` unless the user explicitly requests it. Keep this file short; place module-specific decisions near their code.
 - Keep user-facing React in `src/features/*`, shared Pokemon rules in `src/lib/pokemon/*`, and browser Supabase access in `src/lib/supabase/*`. Prefer existing patterns and `@smogon/calc`, `@pkmn/dex`, and `@pkmn/sets` over new battle engines.
+- Keep the one-feature-at-a-time policy
 - Keep Gemini, Google client secrets, and Supabase service-role credentials out of browser code and `VITE_` variables. RLS, not UI visibility, authorizes database writes. Keep migrations additive; never weaken RLS to fix frontend behavior.
 - For AI work, pass compact pre-scored matchup summaries, validate responses, and make the deterministic fallback useful without Gemini. Aim under 20 seconds with a 15-second server timeout. AI recommendations are not currently a shipped UI feature.
 - Add or update focused tests for parser, damage, recommendation, and Auth-sensitive changes. Keep changes scoped; do not overwrite unrelated work or commit/push unless requested.
+- Modify `feature_list.json` only when working on new features, not minimal modifications like UI adjustments.
+
+## One-Feature-at-a-Time Policy
+
+When implementing features, you MUST follow this workflow:
+
+1. **Pick exactly one feature** from `feature_list.json` with status `"not-started"`.
+2. **Implement only that feature.** Do not touch code unrelated to the chosen feature.
+3. **Verify the feature works** using `docs/verification.md`.
+4. **Update `feature_list.json`** -- set the feature status to `"pass"` and add evidence.
+5. **Commit the change** with a message referencing the feature ID.
+6. **Only then** move to the next feature.
 
 ## Required Artifacts
 
@@ -32,3 +44,4 @@ Smart Battle Calculator is a React/TypeScript Pokemon Champions damage calculato
 - The requested behavior is complete within scope; run relevant focused tests while developing and, after the final edit, `npm run verify`. Run `npm run verify:full` instead for schema, Auth, team storage, calculator, or deployment changes. Follow `docs/verification.md` for prerequisites and scope; `verify:backend` alone is not an acceptance check.
 - Stop on a failed check, investigate it, record the cause and rerun evidence in `docs/verification-failures.md`, and rerun the complete applicable command after a fix. If blocked, leave the failure open, update `PROGRESS.md`, and tell the user. Review the diff and runtime evidence; passing local tests does not prove hosted OAuth or deployment, which require the documented external check.
 - Leave a clean handoff: update `PROGRESS.md` for material changes or incomplete work, name unresolved risks and the next action, and avoid claiming a remote state that was not checked. Keep the startup path in `README.md` usable.
+- Make sure the project is in a stable state and a new agent can easily pick up from where it is left.

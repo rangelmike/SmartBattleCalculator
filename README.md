@@ -25,6 +25,7 @@ For schema, Auth, team storage, calculator or deployment changes, use `npm run v
 ## Find your way
 
 - [Architecture](docs/architecture.md): boundaries, flows, data model, and deployment.
+- [Main features](feature_list.json): stable feature IDs, implementation status, evidence and limits; excludes minor fixes.
 - [UI](src/features/README.md): Auth, navigation, profile/team editor, calculator.
 - [Pokemon mechanics](src/lib/pokemon/README.md): parsing, Champions validation, damage, temporary battle state.
 - [Supabase client](src/lib/supabase/README.md) and [backend](supabase/README.md): Auth, collections, RLS, RPCs, migrations, Edge Functions.
