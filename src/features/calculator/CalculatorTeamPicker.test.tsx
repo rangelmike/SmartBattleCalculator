@@ -29,16 +29,17 @@ beforeEach(() => {
 });
 
 describe("calculator team picker", () => {
-  it("limits My Team to the user's own saved teams", () => {
+  it("defaults My Team to the user's own saved teams", () => {
     render(<CalculatorTeamPicker open side="own" library={library} onClose={vi.fn()} onSelect={vi.fn()} onAddPokemon={vi.fn()} isAdding={false} />);
     expect(screen.getByRole("button", { name: /My rain/ })).toBeVisible();
     expect(screen.queryByRole("button", { name: /Opponent steel/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("tab", { name: "Popular teams" })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "My teams" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Popular teams" })).toBeVisible();
   });
 
-  it("searches popular opponents on the server with source and Pokemon filters", async () => {
+  it.each(["own", "opponent"] as const)("searches and selects popular teams for %s with source and Pokemon filters", async (side) => {
     const onSelect = vi.fn();
-    render(<CalculatorTeamPicker open side="opponent" library={library} onClose={vi.fn()} onSelect={onSelect} onAddPokemon={vi.fn()} isAdding={false} />);
+    render(<CalculatorTeamPicker open side={side} library={library} onClose={vi.fn()} onSelect={onSelect} onAddPokemon={vi.fn()} isAdding={false} />);
     fireEvent.click(screen.getByRole("tab", { name: "Popular teams" }));
     expect(await screen.findByRole("button", { name: /Popular rain/ })).toBeVisible();
     fireEvent.change(screen.getByRole("combobox", { name: "Name or source" }), { target: { value: "Regional" } });
@@ -46,6 +47,11 @@ describe("calculator team picker", () => {
     await waitFor(() => expect(mocks.search).toHaveBeenLastCalledWith({ text: "Regional", pokemon: "Pelipper" }));
     fireEvent.click(screen.getByRole("button", { name: /Popular rain/ }));
     expect(onSelect).toHaveBeenCalledWith(popular);
+    fireEvent.click(screen.getByRole("tab", { name: side === "own" ? "My teams" : "Opponent teams" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Name or source" }), { target: { value: "" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Included Pokemon" }), { target: { value: "" } });
+    expect(screen.getByRole("button", { name: side === "own" ? /My rain/ : /Opponent steel/ })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /Popular rain/ })).not.toBeInTheDocument();
   });
 
   it("adds all completed Pokemon filter terms to My Team without selecting a saved team", async () => {

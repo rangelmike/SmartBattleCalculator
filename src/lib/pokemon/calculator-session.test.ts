@@ -26,32 +26,40 @@ const team: SavedTeam = {
 };
 
 describe("calculator session", () => {
-  it("loads a saved roster and appends individual Pokemon, dropping the last at six", () => {
+  it("loads a saved roster and appends individual Pokemon, dropping the leftmost at six", () => {
     let session = loadRoster(emptyCalculatorSession(), "own", team);
     expect(session.own.slots).toHaveLength(1);
     expect(session.own.teamId).toBe(team.id);
     for (let index = 0; index < 6; index += 1) session = addPokemonToRoster(session, "own", member);
     expect(session.own.slots).toHaveLength(6);
-    expect(session.own.slots[0].id).toBe("team-1:0");
+    expect(session.own.slots.some((slot) => slot.id === "team-1:0")).toBe(false);
     expect(session.own.slots.at(-1)?.id).toBe(session.own.selectedId);
     expect(session.own.teamId).toBeNull();
   });
 
-  it("keeps every searched Pokemon when adding several to a full roster", () => {
+  it.each(["own", "opponent"] as const)("keeps the newest existing Pokemon when adding a batch to %s", (side) => {
     let session = emptyCalculatorSession();
     for (let index = 0; index < 6; index += 1) {
-      session = addPokemonToRoster(session, "opponent", member, `existing-${index}`);
+      session = addPokemonToRoster(session, side, member, `existing-${index}`);
     }
     const additions = [
       { id: "pelipper-new", member },
       { id: "archaludon-new", member: { ...member, name: "Archaludon", species: "Archaludon", ability: "Stamina" } }
     ];
-    const next = addPokemonBatchToRoster(session, "opponent", additions);
-    expect(next.opponent.slots.map((slot) => slot.id)).toEqual([
-      "existing-0", "existing-1", "existing-2", "existing-3", "pelipper-new", "archaludon-new"
+    const next = addPokemonBatchToRoster(session, side, additions);
+    expect(next[side].slots.map((slot) => slot.id)).toEqual([
+      "existing-2", "existing-3", "existing-4", "existing-5", "pelipper-new", "archaludon-new"
     ]);
-    expect(next.opponent.selectedId).toBe("archaludon-new");
-    expect(next.opponent.teamId).toBeNull();
+    expect(next[side].selectedId).toBe("archaludon-new");
+    expect(next[side].teamId).toBeNull();
+  });
+
+  it("keeps a partial roster and replaces all six when the batch fills it", () => {
+    const initial = addPokemonToRoster(emptyCalculatorSession(), "own", member, "initial");
+    const partial = addPokemonBatchToRoster(initial, "own", [{ member, id: "second" }]);
+    expect(partial.own.slots.map((slot) => slot.id)).toEqual(["initial", "second"]);
+    const entries = Array.from({ length: 6 }, (_, index) => ({ member, id: String(index) }));
+    expect(addPokemonBatchToRoster(partial, "own", entries).own.slots.map((slot) => slot.id)).toEqual(entries.map(({ id }) => id));
   });
 
   it("starts a new battle without clearing My Team", () => {

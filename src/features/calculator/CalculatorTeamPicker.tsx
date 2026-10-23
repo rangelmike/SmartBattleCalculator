@@ -58,7 +58,7 @@ export function CalculatorTeamPicker({ open, side, library, onClose, onSelect, o
   }, [open]);
 
   useEffect(() => {
-    if (!open || collection !== "popular" || side !== "opponent") return;
+    if (!open || collection !== "popular") return;
     const current = ++request.current;
     setIsLoading(true);
     setError(null);
@@ -110,12 +110,10 @@ export function CalculatorTeamPicker({ open, side, library, onClose, onSelect, o
             </div>
             <Dialog.Close asChild><button className="rounded p-1 hover:bg-secondary" type="button" aria-label="Close team picker"><X className="h-5 w-5" /></button></Dialog.Close>
           </div>
-          {side === "opponent" ? (
-            <div className="flex gap-1 border-b border-border px-5 pt-3" role="tablist" aria-label="Team collections">
-              <button className={tabClass(collection === "personal")} type="button" role="tab" aria-selected={collection === "personal"} onClick={() => setCollection("personal")}>Opponent teams</button>
-              <button className={tabClass(collection === "popular")} type="button" role="tab" aria-selected={collection === "popular"} onClick={() => setCollection("popular")}>Popular teams</button>
-            </div>
-          ) : null}
+          <div className="flex gap-1 border-b border-border px-5 pt-3" role="tablist" aria-label="Team collections">
+            <button className={tabClass(collection === "personal")} type="button" role="tab" aria-selected={collection === "personal"} onClick={() => setCollection("personal")}>{side === "own" ? "My teams" : "Opponent teams"}</button>
+            <button className={tabClass(collection === "popular")} type="button" role="tab" aria-selected={collection === "popular"} onClick={() => setCollection("popular")}>Popular teams</button>
+          </div>
           <div className="grid gap-3 border-b border-border px-5 py-4 sm:grid-cols-2">
             <FilterAutocomplete
               label="Name or source" value={text} onChange={setText} placeholder="Search teams or sources"

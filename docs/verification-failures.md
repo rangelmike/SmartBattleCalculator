@@ -65,3 +65,15 @@ Keep a short record of failures and rerun evidence. An environment blocker is no
 - Action: start the installed Docker Desktop engine, then rerun the entire full command; this run is not a passing acceptance check.
 - Rerun: starting Docker Desktop did not make its Linux engine available (no Docker process remained). A second complete `verify:full` again passed typecheck/lint/151 tests and stopped at the same Docker connection failure; full integration remains blocked. Run `npm run verify:full` once Docker Desktop's Linux engine is running. The approved-shell basic verification is tracked separately in PROGRESS.
 - Final rerun: approved-shell `npm run verify` passed typecheck/lint/151 tests/build and both browser smoke cases (exit 0), resolving the generator lint and restricted-shell browser issues. Full integration remains blocked specifically by Docker as documented in this entry.
+
+## 2026-10-22 — calculator nature regression selector (resolved in test)
+
+- Focused `CalculatorTeamPanel.test.tsx` run failed because the new assertion expected `rowheader` semantics from the existing table's unscoped `<th>` elements. Nature values and raise/lower selectors were already synchronized.
+- Fix: assert the exact visible stat arrow labels instead. Rerun the complete focused file before proceeding to the next small change; final verification evidence is in PROGRESS.
+
+## 2026-10-22 — calculator adjustments full verification (Docker blocked)
+
+- `npm run verify:full` in the approved Windows shell passed typecheck, lint and all 154 tests (34 files), then failed at disposable Supabase startup/cleanup because Docker Desktop's Linux engine pipe is absent. The independent `docker info` prerequisite check reported the same failure; this is the existing environment blocker.
+- No application or test bypass was added. Full database/signed-in browser integration remains unverified; next action is `npm run verify:full` with a working Docker Linux engine. Basic verification is run separately and does not replace full acceptance.
+- The focused nature selector rerun passed both panel tests after the test selector fix documented above.
+- Final fallback evidence: complete approved-shell `npm run verify` passed typecheck/lint/154 tests/build and both desktop/mobile browser smoke cases (exit 0). Existing build warnings remain non-fatal. No full-integration success is claimed.

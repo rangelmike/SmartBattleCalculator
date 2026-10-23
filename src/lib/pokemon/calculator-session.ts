@@ -71,7 +71,7 @@ export function addPokemonBatchToRoster(
   if (entries.length > 6) throw new Error("A calculator team cannot have more than six new Pokemon at once.");
   const roster = session[side];
   const slots = [
-    ...roster.slots.slice(0, 6 - entries.length),
+    ...roster.slots.slice(Math.max(0, roster.slots.length + entries.length - 6)),
     ...entries.map(({ member, id }) => makeBattlePokemon(member, id))
   ];
   return {

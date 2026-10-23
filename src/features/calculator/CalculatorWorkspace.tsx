@@ -107,7 +107,7 @@ export function CalculatorWorkspace({ profile }: { profile: AppProfile }) {
         const common = profile.isLocal ? null : await getPopularPokemonCommonSet(rules.species).catch(() => null);
         return { base, rules, common };
       }));
-      const usedItems = session[side].slots.slice(0, 6 - speciesNames.length).map((slot) => slot.member.item);
+      const usedItems = session[side].slots.slice(Math.max(0, session[side].slots.length + speciesNames.length - 6)).map((slot) => slot.member.item);
       const additions = seeds.map(({ base, rules, common }) => {
         const member = applyIndividualSetDefault(base, rules, common, usedItems);
         usedItems.push(member.item);

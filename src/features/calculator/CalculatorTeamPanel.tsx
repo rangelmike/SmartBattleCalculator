@@ -207,6 +207,7 @@ export function CalculatorTeamPanel({
               <button className="flex items-center gap-1 rounded px-1.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 disabled:opacity-40" type="button" disabled={!canResetStats} onClick={() => onResetStats(selected)} title="Restore loaded stats, HP and stat stages"><RotateCcw className="h-3.5 w-3.5" /> Reset stats</button>
             </div>
             <div className="mb-2 grid grid-cols-2 gap-2">
+              <div className="col-span-2"><LabeledSelect label="Nature name" value={selected.member.nature ?? "Serious"} values={championsNatures} labels={championsNatures.map(getNatureOptionLabel)} onChange={(value) => updateMember({ nature: value as TeamMember["nature"] }, true)} /></div>
               <label className="grid min-w-0 gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">Nature raises
                 <select className={inputClass} value={natureStats.plus} onChange={(event) => changeNatureStat("plus", event.target.value as PokemonStatId)}>
                   {natureStatIds.map((stat) => <option key={stat} value={stat}>{statLabels[stat]}</option>)}
