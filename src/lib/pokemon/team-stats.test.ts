@@ -50,12 +50,21 @@ describe("team stats", () => {
   it("uses a verified sprite file for every Champions species", () => {
     expect(Object.keys(championsSprites)).toHaveLength([...Generations.get(0).species].length);
     for (const species of Generations.get(0).species) {
-      expect(getPokemonSpriteUrl(species.name)).toMatch(/^https:\/\/play\.pokemonshowdown\.com\/sprites\/ani\/[a-z0-9-]+\.gif$/);
+      expect(getPokemonSpriteUrl(species.name)).toMatch(/^https:\/\/raw\.githubusercontent\.com\/PokeAPI\/sprites\/master\/sprites\/pokemon\/versions\/generation-ix\/champions\/[0-9a-z-]+\.webp$/);
     }
-    expect(getPokemonSpriteUrl("Pelipper")).toBe("https://play.pokemonshowdown.com/sprites/ani/pelipper.gif");
-    expect(getPokemonSpriteUrl("Swampert-Mega")).toBe("https://play.pokemonshowdown.com/sprites/ani/swampert-mega.gif");
-    expect(getPokemonSpriteUrl("Sirfetch’d")).toBe("https://play.pokemonshowdown.com/sprites/ani/sirfetchd.gif");
-    expect(getPokemonSpriteUrl("Absol-Mega-Z")).toBe("https://play.pokemonshowdown.com/sprites/ani/absol.gif");
+    expect(getPokemonSpriteUrl("Pelipper")).toBe("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/279.webp");
+    expect(getPokemonSpriteUrl("Swampert-Mega")).toBe("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/10064.webp");
+    expect(getPokemonSpriteUrl("Sirfetch’d")).toBe("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/865.webp");
+    expect(getPokemonSpriteUrl("Absol-Mega-Z")).toBe("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/10307.webp");
+  });
+
+  it("preserves regional, gender and battle forms", () => {
+    expect(getPokemonSpriteUrl("Tauros-Paldea-Aqua")).toBe("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/10252.webp");
+    expect(getPokemonSpriteUrl("Meowstic-F-Mega")).toBe("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/10326.webp");
+    expect(getPokemonSpriteUrl("Aegislash-Blade")).toBe("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/10026.webp");
+    expect(getPokemonSpriteUrl("Aegislash-Shield")).toBe("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/681.webp");
+    expect(getPokemonSpriteUrl("Sinistcha-Masterpiece")).toBe("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/1013-masterpiece.webp");
+    expect(getPokemonSpriteUrl("unknown")).toBeUndefined();
   });
 
   it("offers Mega only for a matching stone and a Champions form", () => {

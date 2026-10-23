@@ -35,7 +35,7 @@ describe("team viewer", () => {
     expect(screen.getByText("Base 150")).toBeVisible();
     expect(screen.getByText("Level 50 · Champions")).toBeVisible();
     expect(screen.getByRole("img", { name: "Swampert-Mega" })).toHaveAttribute(
-      "src", "https://play.pokemonshowdown.com/sprites/ani/swampert-mega.gif"
+      "src", "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/10064.webp"
     );
     expect(screen.getByText("Swift Swim")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Normal" }));
@@ -47,12 +47,12 @@ describe("team viewer", () => {
     render(<TeamViewer team={{ ...team, team: { ...team.team, format: "vgc" } }} />);
     expect(screen.getByRole("button", { name: "Mega" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("img", { name: "Swampert-Mega" })).toHaveAttribute(
-      "src", "https://play.pokemonshowdown.com/sprites/ani/swampert-mega.gif"
+      "src", "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/10064.webp"
     );
     expect(screen.getByText("Base 150")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Normal" }));
     expect(screen.getByRole("img", { name: "Swampert" })).toHaveAttribute(
-      "src", "https://play.pokemonshowdown.com/sprites/ani/swampert.gif"
+      "src", "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/260.webp"
     );
     expect(screen.getByText("Base 110")).toBeVisible();
   });

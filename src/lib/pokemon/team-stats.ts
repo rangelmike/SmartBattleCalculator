@@ -86,5 +86,5 @@ export function getChampionsMoveDetails(moveName: string) {
 
 export function getPokemonSpriteUrl(speciesName: string) {
   const file = (championsSprites as Record<string, string>)[toID(speciesName)];
-  return file ? `https://play.pokemonshowdown.com/sprites/ani/${file}` : undefined;
+  return file ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-ix/champions/${file}` : undefined;
 }

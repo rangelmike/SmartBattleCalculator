@@ -41,3 +41,27 @@ Keep a short record of failures and rerun evidence. An environment blocker is no
 
 - Command: `npm run verify:full`; typecheck, lint, 150 unit/component tests, 57 SQL assertions, build and both smoke tests passed. Both signed-in browser cases stopped at the Weather selector after successfully saving, reloading, editing and loading a real stored team. Cleanup completed and the command exited nonzero.
 - Cause/fix: exact label matching included the select's option text; switched to its observed accessible combobox name. Added a 10-second action timeout for faster diagnostics. The complete `npm run verify:full` rerun passed all stages, including signed-in CRUD/calculator/sign-out on desktop (11.8 seconds) and mobile (13.5 seconds), four browser cases total. Cleanup succeeded and exit code was 0.
+
+## 2026-10-22 — Champions sprite catalog mapping (resolved)
+
+- Initial `npm run sprites:refresh` could not resolve Basculegion: the calculator's species objects do not expose National Dex numbers.
+- Fix: resolve default-species numbers through `@pkmn/dex`, with explicit aliases for differing form names and verified cosmetic filenames. Complete refresh passed for all 359 supported species/forms against the live PokeAPI Champions WebP index, with no base-form fallback for missing forms.
+- The sandbox could not resolve api.github.com; the public catalog refresh succeeded in the approved shell.
+- `git diff --check` caught extra trailing blank lines in two edited files; removed them before final verification.
+
+## 2026-10-22 — sprite refresh response validation (resolved in source)
+
+- `npm run verify` passed typecheck, then stopped at lint because the sprite refresh script used an unvalidated JSON response.
+- Fix: validate the public directory response with Zod before constructing the filename set. Complete rerun evidence follows in PROGRESS.
+
+## 2026-10-22 — restricted-shell browser verification (rerun in progress)
+
+- Complete `npm run verify` passed typecheck, lint, all 151 tests and production build, then made no progress after Playwright launched its preview server in the restricted Windows shell. Interrupted that stalled run; it is not a passing acceptance check.
+- Action: rerun the complete `npm run verify:full` in the approved shell, including the signed-in calculator flow and disposable local backend. Results are recorded in PROGRESS.
+
+## 2026-10-22 — local Docker engine unavailable
+
+- `npm run verify:full` in the approved shell passed typecheck, lint and 151 tests, then Supabase start/cleanup failed because the Docker Desktop Linux engine named pipe was absent. `docker info` independently confirmed the engine was stopped.
+- Action: start the installed Docker Desktop engine, then rerun the entire full command; this run is not a passing acceptance check.
+- Rerun: starting Docker Desktop did not make its Linux engine available (no Docker process remained). A second complete `verify:full` again passed typecheck/lint/151 tests and stopped at the same Docker connection failure; full integration remains blocked. Run `npm run verify:full` once Docker Desktop's Linux engine is running. The approved-shell basic verification is tracked separately in PROGRESS.
+- Final rerun: approved-shell `npm run verify` passed typecheck/lint/151 tests/build and both browser smoke cases (exit 0), resolving the generator lint and restricted-shell browser issues. Full integration remains blocked specifically by Docker as documented in this entry.
